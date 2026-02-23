@@ -15,8 +15,8 @@ import {
     Camera as CameraIcon
 } from "lucide-react"
 
-export function Moodboard({ influencerId }: { influencerId: string }) {
-    const { items } = useMoodboard(influencerId)
+export function Moodboard({ influencerId, filters = {} }: { influencerId: string, filters?: { type?: string } }) {
+    const { items } = useMoodboard(influencerId, filters)
     const [isModalOpen, setIsModalOpen] = useState(false)
 
     const handleDelete = async (itemId: string) => {

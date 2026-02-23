@@ -7,7 +7,8 @@ import {
     query,
     addDoc,
     doc,
-    Timestamp
+    Timestamp,
+    where
 } from "firebase/firestore";
 import { useState, useEffect } from "react";
 
@@ -72,7 +73,7 @@ export function usePublicInfluencer(id: string) {
 }
 
 // Hook para buscar o Moodboard de um influenciador
-export function useMoodboard(influencerId: string) {
+export function useMoodboard(influencerId: string, filters: { type?: string } = {}) {
     const [items, setItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -84,7 +85,12 @@ export function useMoodboard(influencerId: string) {
         }
 
         setLoading(true);
-        const q = query(collection(db, "influencers", influencerId, "moodboard"));
+        let q = query(collection(db, "influencers", influencerId, "moodboard"));
+
+        if (filters.type) {
+            q = query(q, where("type", "==", filters.type));
+        }
+
         const unsubscribe = onSnapshot(q,
             (snapshot) => {
                 const data = snapshot.docs.map(doc => ({
