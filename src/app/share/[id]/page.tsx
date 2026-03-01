@@ -68,7 +68,7 @@ export default function PublicProfile() {
                         <Stars className="w-6 h-6 text-black -rotate-3" />
                     </div>
                     <div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-none mb-1">Elite Elenco</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-none mb-1">Sintetix Agency</p>
                         <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest leading-none opacity-50">Private Talent Audit</p>
                     </div>
                 </div>
@@ -263,7 +263,7 @@ export default function PublicProfile() {
 
             {/* Micro-footer */}
             <footer className="py-12 border-t border-white/5 px-8 flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest relative z-10">
-                <p>&copy; 2026 Instagramei Elite. All Rights Reserved.</p>
+                <p>&copy; 2026 Sintetix Agency. All Rights Reserved.</p>
                 <p className="hidden md:block">Strategic Digital Influencer Asset Vault</p>
                 <div className="flex gap-6">
                     <a href="#" className="hover:text-primary transition-colors">Privacy</a>

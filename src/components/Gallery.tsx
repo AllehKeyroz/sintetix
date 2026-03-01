@@ -20,6 +20,8 @@ import { db } from "@/lib/firebase"
 import { collection, query, onSnapshot, orderBy } from "firebase/firestore"
 import { createAlbum, deleteAlbum, deleteMoodboardItem } from "@/lib/actions"
 import { AddItemModal } from "./AddItemModal"
+import { ImageViewerModal } from "./ImageViewerModal"
+import { downloadFileToClient } from "@/lib/downloadFile"
 
 export function Gallery({ influencerId }: { influencerId: string | null }) {
     const [albums, setAlbums] = useState<any[]>([])
@@ -29,6 +31,7 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
     const [isAddPhotoModalOpen, setIsAddPhotoModalOpen] = useState(false)
     const [newAlbumName, setNewAlbumName] = useState("")
     const [loading, setLoading] = useState(true)
+    const [viewerUrl, setViewerUrl] = useState<string | null>(null)
 
     useEffect(() => {
         if (!influencerId) {
@@ -95,7 +98,7 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
                 <div>
                     <div className="flex items-center gap-4 mb-4 text-primary/60 font-bold text-[10px] uppercase tracking-[0.4em]">
                         <Camera className="w-4 h-4" />
-                        Professional Photo Asset Management
+                        Acervo Fotográfico Sintetix
                     </div>
                     <h2 className="text-5xl font-black tracking-tighter text-white uppercase leading-none">
                         Editoriais <span className="text-primary italic">&</span> Media
@@ -109,7 +112,7 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
                             className="px-8 py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-primary hover:text-white transition-all flex items-center gap-3"
                         >
                             <Plus className="w-4 h-4" />
-                            Importar Assets
+                            Importar Fotos
                         </button>
                     ) : (
                         <button
@@ -135,7 +138,7 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
                     )}
                 >
                     <Grid3X3 className="w-3.5 h-3.5" />
-                    Vista Geral
+                    Visão Geral
                 </button>
 
                 <div className="w-[1px] h-6 bg-white/10 mx-2" />
@@ -195,18 +198,28 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: idx * 0.03 }}
-                                    className="group bg-white/[0.02] rounded-[2.5rem] overflow-hidden aspect-[3/4] border border-white/5 relative hover:border-primary/50 transition-all"
+                                    className="group bg-white/[0.02] rounded-[2.5rem] overflow-hidden aspect-[3/4] border border-white/5 relative hover:border-primary/50 transition-all cursor-pointer"
+                                    onClick={() => setViewerUrl(item.url)}
                                 >
                                     <img src={item.url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
 
                                     {/* Action Overlays */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500">
                                         <div className="absolute top-6 right-6 flex flex-col gap-2 scale-75 group-hover:scale-100 transition-transform origin-top-right">
-                                            <button className="p-3 bg-white/10 backdrop-blur-xl rounded-2xl text-white hover:bg-white/20 transition-all">
+                                            <button
+                                                className="p-3 bg-white/10 backdrop-blur-xl rounded-2xl text-white hover:bg-white/20 transition-all"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setViewerUrl(item.url);
+                                                }}
+                                            >
                                                 <Maximize2 className="w-4 h-4" />
                                             </button>
                                             <button
-                                                onClick={() => deleteMoodboardItem(influencerId, item.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteMoodboardItem(influencerId, item.id);
+                                                }}
                                                 className="p-3 bg-destructive/10 backdrop-blur-xl rounded-2xl text-destructive hover:bg-destructive hover:text-white transition-all"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -216,12 +229,12 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
                                         <div className="absolute bottom-8 left-8 right-8 translate-y-4 group-hover:translate-y-0 transition-transform">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <div className="px-2 py-0.5 bg-primary/20 backdrop-blur-md rounded text-[7px] font-black text-primary uppercase border border-primary/20 tracking-widest">
-                                                    {item.type === 'highlight' ? 'Portfolio' : 'Internal'}
+                                                    {item.type === 'highlight' ? 'Destaque' : 'Interno'}
                                                 </div>
                                                 {item.type === 'highlight' && <Star className="w-3 h-3 text-primary fill-primary" />}
                                             </div>
                                             <p className="text-sm font-black text-white leading-tight uppercase tracking-tight">{item.title}</p>
-                                            <p className="text-[10px] text-white/40 mt-1 font-medium truncate italic leading-relaxed">{item.obs || 'No technical notes'}</p>
+                                            <p className="text-[10px] text-white/40 mt-1 font-medium truncate italic leading-relaxed">{item.obs || 'Sem notas técnicas'}</p>
                                         </div>
                                     </div>
 
@@ -274,6 +287,14 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
                     defaultAlbumId={selectedAlbumId !== "unorganized" ? selectedAlbumId || undefined : undefined}
                     defaultType="post"
                     onClose={() => setIsAddPhotoModalOpen(false)}
+                />
+            )}
+
+            {viewerUrl && (
+                <ImageViewerModal
+                    url={viewerUrl}
+                    onClose={() => setViewerUrl(null)}
+                    onDownload={() => downloadFileToClient(viewerUrl)}
                 />
             )}
         </div>

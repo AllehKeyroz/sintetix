@@ -5,6 +5,7 @@ import { addMoodboardItem } from "@/lib/actions"
 import { Plus, X, Upload, Camera, MessageSquare, Image, Folder, Loader2 } from "lucide-react"
 import { db } from "@/lib/firebase"
 import { collection, query, onSnapshot, orderBy } from "firebase/firestore"
+import { cn } from "@/lib/utils"
 
 interface AddItemModalProps {
     influencerId: string
@@ -22,8 +23,10 @@ export function AddItemModal({ influencerId, onClose, defaultType, defaultAlbumI
         prompt: "",
         obs: "",
         albumId: defaultAlbumId || "",
+        categoryId: "",
         file: null as File | null
     })
+    const [wardrobeCategories, setWardrobeCategories] = useState<any[]>([])
 
     useEffect(() => {
         if (!influencerId) return
@@ -32,7 +35,16 @@ export function AddItemModal({ influencerId, onClose, defaultType, defaultAlbumI
         const unsub = onSnapshot(q, (snap) => {
             setAlbums(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
         })
-        return () => unsub()
+
+        const catRef = collection(db, "influencers", influencerId, "wardrobe_categories")
+        const catUnsub = onSnapshot(query(catRef, orderBy("created_at", "asc")), (snap) => {
+            setWardrobeCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+        })
+
+        return () => {
+            unsub()
+            catUnsub()
+        }
     }, [influencerId])
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -47,8 +59,8 @@ export function AddItemModal({ influencerId, onClose, defaultType, defaultAlbumI
                 imageFile: formData.file,
                 prompt: formData.prompt,
                 obs: formData.obs,
-                // @ts-ignore - passing extra field albumId
-                albumId: formData.albumId || null
+                albumId: formData.albumId || null,
+                categoryId: formData.categoryId || null
             })
             onClose()
         } catch (error) {
@@ -136,13 +148,34 @@ export function AddItemModal({ influencerId, onClose, defaultType, defaultAlbumI
                                         className="w-full bg-secondary/30 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer disabled:opacity-50"
                                         disabled={formData.type === 'wardrobe'}
                                     >
-                                        <option value="" className="bg-[#0c0c0e]">Nenhum (Avulsa)</option>
+                                        <option value="" className="bg-[#0c0c0e]">Nenhum (Álbum)</option>
                                         {albums.map(album => (
                                             <option key={album.id} value={album.id} className="bg-[#0c0c0e]">{album.name}</option>
                                         ))}
                                     </select>
                                 </div>
                             </div>
+
+                            {formData.type === 'wardrobe' && (
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest ml-1">Categoria do Guarda-Roupa</label>
+                                    <select
+                                        value={formData.categoryId}
+                                        onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                                        className="w-full bg-secondary/30 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:ring-1 focus:ring-primary outline-none appearance-none cursor-pointer"
+                                    >
+                                        <option value="" className="bg-[#0c0c0e]">Selecione uma categoria...</option>
+                                        {wardrobeCategories.map(cat => (
+                                            <option key={cat.id} value={cat.id} className="bg-[#0c0c0e]">{cat.label}</option>
+                                        ))}
+                                    </select>
+                                    {wardrobeCategories.length === 0 && (
+                                        <p className="text-[9px] text-primary/60 italic ml-1 mt-1">
+                                            Vá em Guarda-roupa &gt; Categorias para criar uma nova.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 

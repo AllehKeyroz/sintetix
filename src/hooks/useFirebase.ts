@@ -8,18 +8,29 @@ import {
     addDoc,
     doc,
     Timestamp,
-    where
+    where,
+    orderBy
 } from "firebase/firestore";
 import { useState, useEffect } from "react";
 
 // Hook para buscar influenciadores
-export function useInfluencers() {
+export function useInfluencers(agencyId?: string) {
     const [influencers, setInfluencers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        const q = query(collection(db, "influencers"));
+        if (!agencyId) {
+            setInfluencers([]);
+            setLoading(false);
+            return;
+        }
+
+        const q = query(
+            collection(db, "influencers"),
+            where("agencyId", "==", agencyId)
+        );
+
         const unsubscribe = onSnapshot(q,
             (snapshot) => {
                 const data = snapshot.docs.map(doc => ({
@@ -37,7 +48,7 @@ export function useInfluencers() {
             }
         );
         return () => unsubscribe();
-    }, []);
+    }, [agencyId]);
 
     return { influencers, loading, error };
 }
@@ -111,6 +122,47 @@ export function useMoodboard(influencerId: string, filters: { type?: string } = 
     }, [influencerId]);
 
     return { items, loading, error };
+}
+
+// Hook para buscar os chats do Studio de um influenciador
+export function useStudioChats(influencerId: string) {
+    const [chats, setChats] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!influencerId) {
+            setChats([]);
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        const q = query(
+            collection(db, "influencers", influencerId, "studio_chats"),
+            orderBy("created_at", "asc")
+        );
+
+        const unsubscribe = onSnapshot(q,
+            (snapshot) => {
+                const data = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setChats(data);
+                setLoading(false);
+                setError(null);
+            },
+            (err) => {
+                console.error("Erro ao buscar studio chats:", err);
+                setError(err.message);
+                setLoading(false);
+            }
+        );
+        return () => unsubscribe();
+    }, [influencerId]);
+
+    return { chats, loading, error };
 }
 
 // Função para sementear dados iniciais (Seed)

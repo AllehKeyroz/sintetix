@@ -5,6 +5,8 @@ import { motion } from "framer-motion"
 import { useMoodboard } from "@/hooks/useFirebase"
 import { deleteMoodboardItem } from "@/lib/actions"
 import { AddItemModal } from "./AddItemModal"
+import { ImageViewerModal } from "./ImageViewerModal"
+import { downloadFileToClient } from "@/lib/downloadFile"
 
 import {
     Plus as PlusIcon,
@@ -18,6 +20,7 @@ import {
 export function Moodboard({ influencerId, filters = {} }: { influencerId: string, filters?: { type?: string } }) {
     const { items } = useMoodboard(influencerId, filters)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [viewerUrl, setViewerUrl] = useState<string | null>(null)
 
     const handleDelete = async (itemId: string) => {
         if (confirm("Deseja remover esta referência da galeria do influencer?")) {
@@ -60,7 +63,7 @@ export function Moodboard({ influencerId, filters = {} }: { influencerId: string
                             transition={{ delay: idx * 0.1 }}
                             className="group glass-card rounded-2xl overflow-hidden flex flex-col h-full ring-1 ring-white/5"
                         >
-                            <div className="relative aspect-[4/5] overflow-hidden">
+                            <div className="relative aspect-[4/5] overflow-hidden cursor-pointer" onClick={() => setViewerUrl(item.url)}>
                                 <img
                                     src={item.url}
                                     alt={item.title}
@@ -72,11 +75,20 @@ export function Moodboard({ influencerId, filters = {} }: { influencerId: string
                                     </span>
                                 </div>
                                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                    <button className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-colors">
+                                    <button
+                                        className="p-3 bg-white/10 backdrop-blur-md rounded-full hover:bg-white/20 transition-colors"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setViewerUrl(item.url);
+                                        }}
+                                    >
                                         <MaximizeIcon className="w-5 h-5 text-white" />
                                     </button>
                                     <button
-                                        onClick={() => handleDelete(item.id)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(item.id);
+                                        }}
                                         className="p-3 bg-destructive/20 backdrop-blur-md rounded-full hover:bg-destructive/40 transition-colors"
                                     >
                                         <TrashIcon className="w-5 h-5 text-destructive-foreground" />
@@ -122,6 +134,14 @@ export function Moodboard({ influencerId, filters = {} }: { influencerId: string
                 <AddItemModal
                     influencerId={influencerId}
                     onClose={() => setIsModalOpen(false)}
+                />
+            )}
+
+            {viewerUrl && (
+                <ImageViewerModal
+                    url={viewerUrl}
+                    onClose={() => setViewerUrl(null)}
+                    onDownload={() => downloadFileToClient(viewerUrl)}
                 />
             )}
         </div>

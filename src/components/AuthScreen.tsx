@@ -4,7 +4,9 @@ import { useState } from "react"
 import { auth } from "@/lib/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
 import { motion, AnimatePresence } from "framer-motion"
-import { LogIn, UserPlus, ShieldCheck, Mail, Lock, Loader2, Sparkles, Zap, Shield } from "lucide-react"
+import { LogIn, UserPlus, ShieldCheck, Mail, Lock, Loader2, Sparkles, Zap, Shield, Crown } from "lucide-react"
+import { db } from "@/lib/firebase"
+import { doc, setDoc, Timestamp } from "firebase/firestore"
 
 export function AuthScreen() {
     const [isLogin, setIsLogin] = useState(true)
@@ -22,7 +24,26 @@ export function AuthScreen() {
             if (isLogin) {
                 await signInWithEmailAndPassword(auth, email, password)
             } else {
-                await createUserWithEmailAndPassword(auth, email, password)
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+                const user = userCredential.user
+
+                // 1. Criar a Agência associada a este usuário (usaremos o UID do user como ID da agência inicial por padrão ou um random)
+                const agencyId = user.uid // Para simplificar o MVP, o User ID é o ID da sua agência inicial
+
+                await setDoc(doc(db, "agencies", agencyId), {
+                    name: "Sintetix Agency",
+                    ownerId: user.uid,
+                    created_at: Timestamp.now()
+                })
+
+                // 2. Criar o perfil do usuário vinculado à agência
+                await setDoc(doc(db, "users", user.uid), {
+                    email: user.email,
+                    agencyId: agencyId,
+                    role: 'user',
+                    name: email.split('@')[0],
+                    created_at: Timestamp.now()
+                })
             }
         } catch (err: any) {
             console.error(err)
@@ -56,7 +77,7 @@ export function AuthScreen() {
                         </div>
                         <div>
                             <h1 className="text-6xl font-black tracking-tighter text-white uppercase leading-none">
-                                Instagramei<br /><span className="text-primary italic">Elite</span>
+                                Sintetix<br /><span className="text-primary italic">Agency</span>
                             </h1>
                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.6em] mt-4">Autonomous Influencer Management</p>
                         </div>
@@ -102,9 +123,9 @@ export function AuthScreen() {
                     <div className="bg-[#0c0c0e]/80 backdrop-blur-3xl p-12 rounded-[3.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] relative overflow-hidden">
                         <div className="lg:hidden flex flex-col items-center mb-12">
                             <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-2xl mb-6">
-                                <Shield className="w-8 h-8 text-black" />
+                                <Crown className="w-8 h-8 text-black" />
                             </div>
-                            <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Instagramei <span className="text-primary italic">Elite</span></h2>
+                            <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Sintetix <span className="text-primary italic">Agency</span></h2>
                         </div>
 
                         <div className="mb-12">
@@ -128,7 +149,7 @@ export function AuthScreen() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
                                         className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-14 pr-6 py-5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/10"
-                                        placeholder="agente@instagramei.elite"
+                                        placeholder="agente@sintetix.agency"
                                     />
                                 </div>
                             </div>

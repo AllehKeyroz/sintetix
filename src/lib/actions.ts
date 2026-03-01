@@ -13,7 +13,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // --- TIPOS ---
-export type ModuleType = "identity" | "gallery" | "wardrobe" | "calendar" | "crm" | "settings"
+export type ModuleType = "dashboard" | "identity" | "gallery" | "wardrobe" | "studio" | "calendar" | "crm" | "settings" | "admin_dashboard" | "admin_models" | "admin_studio" | "admin_gallery"
 
 // --- CRUD ÁLBUNS ---
 
@@ -61,10 +61,18 @@ export async function updateInfluencer(id: string, data: any, imageFile?: File |
 }
 
 /**
+ * Deleta um influenciador definitivamente
+ */
+export async function deleteInfluencer(id: string) {
+    const docRef = doc(db, "influencers", id);
+    await deleteDoc(docRef);
+}
+
+/**
  * Cria um novo influenciador com perfil básico
  */
-export async function createInfluencer(name: string, imageFile?: File) {
-    let imageUrl = "https://via.placeholder.com/150";
+export async function createInfluencer(name: string, agencyId: string, gender: string, imageFile?: File) {
+    let imageUrl = null; // Removida a URL placeholder para evitar imagem quebrada
 
     if (imageFile) {
         const storageRef = ref(storage, `influencers/avatars/${Date.now()}_${imageFile.name}`);
@@ -74,6 +82,7 @@ export async function createInfluencer(name: string, imageFile?: File) {
 
     const docRef = await addDoc(collection(db, "influencers"), {
         name,
+        agencyId,
         image: imageUrl,
         date_of_birth: "",
         base_city: "",
@@ -85,7 +94,7 @@ export async function createInfluencer(name: string, imageFile?: File) {
         },
         short_bio: "",
         dossier: {
-            sex: "",
+            sex: gender, // Define o sexo aqui
             faith: "",
             career: "",
             education: "",
@@ -107,6 +116,28 @@ export async function createInfluencer(name: string, imageFile?: File) {
     return docRef.id;
 }
 
+// --- CRUD CATEGORIAS DE GUARDA-ROUPA ---
+
+/**
+ * Cria uma nova categoria de guarda-roupa
+ */
+export async function createWardrobeCategory(influencerId: string, category: { label: string, iconName: string }) {
+    const categoriesRef = collection(db, "influencers", influencerId, "wardrobe_categories");
+    const docRef = await addDoc(categoriesRef, {
+        ...category,
+        created_at: Timestamp.now()
+    });
+    return docRef.id;
+}
+
+/**
+ * Deleta uma categoria de guarda-roupa
+ */
+export async function deleteWardrobeCategory(influencerId: string, categoryId: string) {
+    const docRef = doc(db, "influencers", influencerId, "wardrobe_categories", categoryId);
+    await deleteDoc(docRef);
+}
+
 // --- CRUD MOODBOARD (CLOSET / POSTS / ANCHORS) ---
 
 /**
@@ -118,7 +149,8 @@ export async function addMoodboardItem(influencerId: string, item: {
     imageFile: File,
     prompt: string,
     obs: string,
-    albumId?: string | null
+    albumId?: string | null,
+    categoryId?: string | null
 }) {
     // 1. Upload da imagem para o Storage
     const path = `influencers/${influencerId}/moodboard/${item.type}/${Date.now()}_${item.imageFile.name}`;
@@ -135,6 +167,7 @@ export async function addMoodboardItem(influencerId: string, item: {
         prompt: item.prompt,
         obs: item.obs,
         albumId: item.albumId || null,
+        categoryId: item.categoryId || null,
         created_at: Timestamp.now()
     });
 }
