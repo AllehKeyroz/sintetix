@@ -13,6 +13,7 @@ import { GalleryPickerModal } from "./GalleryPickerModal"
 import { storage } from "@/lib/firebase"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/context/AuthContext"
 
 import { listWorkflowTemplates, listModelCategories } from "@/lib/admin_actions"
 
@@ -49,6 +50,7 @@ const AVAILABLE_ICONS = [
 ]
 
 export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudioProps) {
+    const { profile } = useAuth()
     const [activeTab, setActiveTab] = useState<string>("generate")
     const [dynamicCategories, setDynamicCategories] = useState<ModelCategory[]>([])
 
@@ -71,7 +73,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
 
     const fetchQuota = async () => {
         try {
-            const targetParam = isAdminMode ? "admin" : (influencerId || "admin");
+            const targetParam = isAdminMode ? "admin" : (profile?.agencyId || "admin");
             const res = await fetch(`/api/nordy/quota?targetId=${targetParam}`);
             if (res.ok) {
                 const data = await res.json();
@@ -471,7 +473,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                 if (data.file) {
                     const formData = new FormData();
                     formData.append("file", data.file);
-                    const targetParam = isAdminMode ? "admin" : (influencerId || "admin");
+                    const targetParam = isAdminMode ? "admin" : (profile?.agencyId || "admin");
                     const upRes = await fetch(`/api/nordy/upload?targetId=${targetParam}`, { method: "POST", body: formData });
                     const upData = await upRes.json();
                     if (!upRes.ok) throw new Error(upData.error || "Falha ao subir imagem");
@@ -572,7 +574,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
             });
 
             // 3. Chamar API de Geração
-            const targetParam = isAdminMode ? "admin" : (influencerId || "admin");
+            const targetParam = isAdminMode ? "admin" : (profile?.agencyId || "admin");
             const res = await fetch(`/api/nordy/generate?targetId=${targetParam}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -598,7 +600,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                 // Removido o timeout automático a pedido do usuário (permitindo gerações infinitas se necessário, até dar erro ou sucesso)
 
                 try {
-                    const targetParam = isAdminMode ? "admin" : (influencerId || "admin");
+                    const targetParam = isAdminMode ? "admin" : (profile?.agencyId || "admin");
                     const stRes = await fetch(`/api/nordy/status?jobId=${jobId}&targetId=${targetParam}`);
 
                     if (!stRes.ok) {

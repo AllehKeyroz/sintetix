@@ -370,7 +370,20 @@ export function Sidebar({
             </div>
             <div className="overflow-hidden">
               <p className="text-[10px] font-bold text-white truncate leading-none mb-1">{user?.email?.split('@')[0]}</p>
-              <p className="text-[7px] text-muted-foreground uppercase tracking-widest font-black opacity-50">{profile?.role || 'User'}</p>
+
+              <button
+                onClick={() => {
+                  const targetId = isSaaSAdmin ? "admin" : profile?.agencyId;
+                  if (targetId) {
+                    navigator.clipboard.writeText(targetId);
+                    alert("ID da Instância copiado! Cole na extensão Sintetix Link.");
+                  }
+                }}
+                className="flex items-center gap-1 text-[7px] text-muted-foreground uppercase tracking-widest font-black opacity-60 hover:opacity-100 hover:text-primary transition-all cursor-pointer"
+                title="Copiar ID da Instância para a Extensão"
+              >
+                {profile?.role || 'User'} <Copy className="w-2.5 h-2.5" />
+              </button>
             </div>
           </div>
           <button
