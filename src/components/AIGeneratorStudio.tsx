@@ -14,6 +14,7 @@ import { storage } from "@/lib/firebase"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
+import { ExtensionSetupModal } from "./ExtensionSetupModal"
 
 import { listWorkflowTemplates, listModelCategories } from "@/lib/admin_actions"
 
@@ -62,6 +63,9 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
     const [history, setHistory] = useState<{ id: string, url: string | null, urls?: string[], prompt: string, negativePrompt?: string, model: string, size: string, isLoading: boolean, error: string | null, cost?: number, duration?: number }[]>([])
     const [errorMsg, setErrorMsg] = useState("")
 
+    // Controle da Extensão
+    const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
+
     // Modal de Confirmação Customizado
     const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean, message: string, onConfirm: () => void }>({ isOpen: false, message: "", onConfirm: () => { } })
 
@@ -87,6 +91,9 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                     used = Number(data.usedAmount || data.credit_used || data.used || 0);
                 }
                 setQuotaInfo({ total, used });
+            } else if (res.status === 500 || res.status === 401) {
+                // Token inválido ou Cookie Não Definido - Trigger no Modal de Passaporte da Extensão!
+                setIsExtensionModalOpen(true);
             }
         } catch (e) {
             console.error("Erro ao buscar cota:", e);
@@ -888,6 +895,15 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                             <Settings className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         </button>
                     )}
+
+                    <button
+                        onClick={() => setIsExtensionModalOpen(true)}
+                        className="h-9 px-4 rounded-xl bg-primary/20 hover:bg-primary/40 text-primary border border-primary/20 text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(139,92,246,0.1)] hover:shadow-[0_0_20px_rgba(139,92,246,0.2)]"
+                        title="Sincronizar A.I Motor"
+                    >
+                        <Zap className="w-3.5 h-3.5" />
+                        A.I Link
+                    </button>
                 </div>
             </div>
 
@@ -1199,6 +1215,12 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                 setWorkflows={setWorkflows}
                 isAdminMode={isAdminMode}
             />
+
+            <ExtensionSetupModal
+                isOpen={isExtensionModalOpen}
+                onClose={() => setIsExtensionModalOpen(false)}
+            />
+
             {viewerUrl && <ImageViewerModal url={viewerUrl} onClose={() => setViewerUrl(null)} onDownload={() => downloadFileToClient(viewerUrl)} />}
 
             {pickingGalleryForNode && effectiveInfluencerId && (
