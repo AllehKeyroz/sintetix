@@ -22,7 +22,8 @@ import {
   Check,
   Sparkles,
   LayoutPanelLeft,
-  Key
+  Key,
+  Copy
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
