@@ -12,7 +12,12 @@ export async function GET(req: Request) {
             );
         }
 
-        const cookie = process.env.NORDY_COOKIE;
+        const targetId = searchParams.get("targetId") || "admin";
+
+        let cookie = process.env.NORDY_COOKIE;
+        if (targetId && targetId !== "admin") {
+            cookie = process.env[`NORDY_COOKIE_${targetId}`] || process.env.NORDY_COOKIE;
+        }
 
         if (!cookie) {
             return NextResponse.json(

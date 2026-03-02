@@ -14,7 +14,13 @@ export async function POST(req: Request) {
             );
         }
 
-        const cookie = process.env.NORDY_COOKIE;
+        const { searchParams } = new URL(req.url);
+        const targetId = searchParams.get("targetId") || "admin";
+
+        let cookie = process.env.NORDY_COOKIE;
+        if (targetId && targetId !== "admin") {
+            cookie = process.env[`NORDY_COOKIE_${targetId}`] || process.env.NORDY_COOKIE;
+        }
 
         if (!cookie) {
             return NextResponse.json(

@@ -139,8 +139,7 @@ export function useStudioChats(influencerId: string) {
 
         setLoading(true);
         const q = query(
-            collection(db, "influencers", influencerId, "studio_chats"),
-            orderBy("created_at", "asc")
+            collection(db, "influencers", influencerId, "studio_chats")
         );
 
         const unsubscribe = onSnapshot(q,
@@ -148,7 +147,11 @@ export function useStudioChats(influencerId: string) {
                 const data = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
-                }));
+                })).sort((a: any, b: any) => {
+                    const timeA = (a.updated_at || a.created_at)?.toMillis() || 0;
+                    const timeB = (b.updated_at || b.created_at)?.toMillis() || 0;
+                    return timeB - timeA; // Descending order
+                });
                 setChats(data);
                 setLoading(false);
                 setError(null);

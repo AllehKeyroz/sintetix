@@ -29,6 +29,7 @@ export interface ComfyMapping {
     widthNodeId?: string;
     heightNodeId?: string;
     baseImageNodeId?: string;
+    outputNodeId?: string; // NOVO: ID do node que salva a imagem final
     promptRequired?: boolean;
     promptPlaceholder?: string;
     imageInputs?: { label: string, nodeId: string }[];

@@ -452,6 +452,7 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
                                         {/* Mapeamentos básicos baseados em IDs */}
                                         <div className="space-y-4">
                                             {[
+                                                { label: "Nó Saída Principal", key: "outputNodeId" },
                                                 { label: "Nó Prompt Positivo", key: "positivePromptNodeId" },
                                                 { label: "Nó Prompt Negativo", key: "negativePromptNodeId" },
                                                 { label: "Nó Resolução (W/H)", key: "widthNodeId" },

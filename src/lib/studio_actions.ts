@@ -16,7 +16,8 @@ export async function createStudioChat(influencerId: string, title: string) {
     const docRef = await addDoc(chatRef, {
         title,
         history: [],
-        created_at: Timestamp.now()
+        created_at: Timestamp.now(),
+        updated_at: Timestamp.now()
     });
     return docRef.id;
 }

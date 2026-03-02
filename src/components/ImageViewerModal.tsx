@@ -46,6 +46,8 @@ export function ImageViewerModal({ url, alt = "Imagem", onClose, onDownload }: I
         setIsDragging(false);
     };
 
+    const isVideo = url.toLowerCase().includes(".mp4");
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
             {/* Header Controls */}
@@ -62,7 +64,7 @@ export function ImageViewerModal({ url, alt = "Imagem", onClose, onDownload }: I
                         <Maximize className="w-5 h-5" />
                     </button>
                     {onDownload && (
-                        <button onClick={onDownload} className="p-2 bg-primary/80 hover:bg-primary rounded-lg text-white transition-colors ml-4 shadow-[0_0_15px_rgba(139,92,246,0.5)]" title="Fazer Download da Imagem (JPG/PNG)">
+                        <button onClick={onDownload} className="p-2 bg-primary/80 hover:bg-primary rounded-lg text-white transition-colors ml-4 shadow-[0_0_15px_rgba(139,92,246,0.5)]" title={`Fazer Download ${isVideo ? '(MP4)' : '(JPG/PNG)'}`}>
                             <Download className="w-5 h-5" />
                         </button>
                     )}
@@ -81,15 +83,29 @@ export function ImageViewerModal({ url, alt = "Imagem", onClose, onDownload }: I
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
             >
-                <img
-                    src={url}
-                    alt={alt}
-                    draggable={false}
-                    className="max-w-[90vw] max-h-[90vh] object-contain transition-transform duration-75 ease-out"
-                    style={{
-                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                    }}
-                />
+                {isVideo ? (
+                    <video
+                        src={url}
+                        autoPlay
+                        loop
+                        controls
+                        draggable={false}
+                        className="max-w-[90vw] max-h-[90vh] object-contain transition-transform duration-75 ease-out"
+                        style={{
+                            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                        }}
+                    />
+                ) : (
+                    <img
+                        src={url}
+                        alt={alt}
+                        draggable={false}
+                        className="max-w-[90vw] max-h-[90vh] object-contain transition-transform duration-75 ease-out"
+                        style={{
+                            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                        }}
+                    />
+                )}
             </div>
 
             {/* Helper Text */}

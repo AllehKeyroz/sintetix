@@ -7,7 +7,8 @@ export const downloadFileToClient = async (url: string, prefix: string = "sintet
         const a = document.createElement("a");
         a.style.display = "none";
         a.href = proxyUrl;
-        a.setAttribute("download", `${prefix}${Date.now()}.png`);
+        const ext = url.toLowerCase().includes(".mp4") ? "mp4" : "png";
+        a.setAttribute("download", `${prefix}${Date.now()}.${ext}`);
 
         document.body.appendChild(a);
         a.click();

@@ -23,8 +23,10 @@ export async function GET(req: Request) {
 
         // 2. Se a origem forçou binary ou está ausente, vamos adivinhar pela URL (se tiver .png / .jpg)
         if (!contentType || contentType === "application/octet-stream" || contentType === "binary/octet-stream") {
-            const derived = mime.lookup(url);
+            const pureUrl = url ? url.split("?")[0] : "";
+            const derived = mime.lookup(pureUrl);
             if (derived) contentType = derived;
+            else if (pureUrl.toLowerCase().includes(".mp4")) contentType = "video/mp4";
             else contentType = "image/png"; // Ultimo resort seguro e o esperado primariamente
         }
 
