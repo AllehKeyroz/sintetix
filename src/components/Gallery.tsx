@@ -94,24 +94,24 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
     }
 
     return (
-        <div className="flex-1 overflow-y-auto no-scrollbar bg-background p-8 md:p-12">
+        <div className="flex-1 overflow-y-auto no-scrollbar bg-background p-4 md:p-12">
             <div className="max-w-[2000px] mx-auto">
-                <header className="flex flex-col md:flex-row md:justify-between md:items-end mb-8 gap-6">
+                <header className="flex flex-col md:flex-row md:justify-between items-start md:items-end mb-8 gap-6">
                     <div>
                         <div className="flex items-center gap-3 mb-2 text-primary/60 font-bold text-[9px] uppercase tracking-[0.3em]">
                             <Camera className="w-3.5 h-3.5" />
                             Acervo Fotográfico Sintetix
                         </div>
-                        <h2 className="text-3xl font-black tracking-tighter text-white uppercase leading-none">
+                        <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-white uppercase leading-none">
                             Editoriais <span className="text-primary italic">&</span> Media
                         </h2>
                     </div>
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
                         {selectedAlbumId ? (
                             <button
                                 onClick={() => setIsAddPhotoModalOpen(true)}
-                                className="px-8 py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-primary hover:text-white transition-all flex items-center gap-3"
+                                className="px-8 py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-primary hover:text-white transition-all flex items-center justify-center sm:justify-start gap-3 w-full sm:w-auto"
                             >
                                 <Plus className="w-4 h-4" />
                                 Importar Fotos
@@ -119,7 +119,7 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
                         ) : (
                             <button
                                 onClick={() => setIsCreateAlbumModalOpen(true)}
-                                className="px-8 py-4 bg-white/5 text-white border border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 transition-all flex items-center gap-3"
+                                className="px-8 py-4 bg-white/5 text-white border border-white/10 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 transition-all flex items-center justify-center sm:justify-start gap-3 w-full sm:w-auto"
                             >
                                 <Folder className="w-4 h-4" />
                                 Novo Álbum

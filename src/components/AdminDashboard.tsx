@@ -59,8 +59,8 @@ export function AdminDashboard() {
     }
 
     return (
-        <div className="p-8 max-w-6xl mx-auto flex flex-col h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="flex items-center justify-between mb-8">
+        <div className="p-4 md:p-8 max-w-6xl mx-auto flex flex-col h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-8">
                 <div>
                     <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
                         <ShieldCheck className="w-8 h-8 text-primary" />
@@ -71,7 +71,7 @@ export function AdminDashboard() {
                     </p>
                 </div>
 
-                <div className="relative">
+                <div className="relative w-full sm:w-auto flex justify-end">
                     <button
                         onClick={() => setShowSettings(!showSettings)}
                         className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/50 hover:text-white group"

@@ -104,7 +104,7 @@ export function AgencyOverview({ agencyId, onModuleChange }: { agencyId: string 
     }
 
     return (
-        <div className="flex-1 overflow-y-auto bg-background p-8 md:p-12 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto bg-background p-4 md:p-12 custom-scrollbar">
             <div className="max-w-7xl mx-auto">
                 <header className="mb-16">
                     <div className="flex items-center gap-3 mb-4 text-primary font-bold text-[10px] uppercase tracking-[0.4em]">
@@ -155,7 +155,7 @@ export function AgencyOverview({ agencyId, onModuleChange }: { agencyId: string 
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Distribuição de Gênero */}
-                    <div className="lg:col-span-1 bg-white/[0.02] border border-white/5 rounded-[3rem] p-10 flex flex-col justify-between">
+                    <div className="lg:col-span-1 bg-white/[0.02] border border-white/5 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 flex flex-col justify-between">
                         <div>
                             <h3 className="text-lg font-black text-white uppercase tracking-tight mb-8 font-black uppercase">
                                 Divisão de <span className="text-primary italic">Casting</span>
@@ -174,7 +174,7 @@ export function AgencyOverview({ agencyId, onModuleChange }: { agencyId: string 
                     </div>
 
                     {/* Destaques do Casting */}
-                    <div className="lg:col-span-2 bg-secondary/30 border border-white/5 rounded-[3rem] p-10">
+                    <div className="lg:col-span-2 bg-secondary/30 border border-white/5 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10">
                         <div className="flex justify-between items-center mb-10">
                             <h3 className="text-lg font-black text-white uppercase tracking-tight">Últimos <span className="text-primary italic">Cadastros</span></h3>
                             <button className="text-[10px] font-black uppercase text-primary hover:underline flex items-center gap-2">
@@ -216,7 +216,7 @@ export function AgencyOverview({ agencyId, onModuleChange }: { agencyId: string 
 
 function MetricCard({ label, value, icon: Icon, trend, description }: any) {
     return (
-        <div className="bg-white/[0.02] border border-white/5 p-8 rounded-[2.5rem] hover:border-primary/30 transition-all group overflow-hidden relative">
+        <div className="bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] hover:border-primary/30 transition-all group overflow-hidden relative">
             <div className="absolute -right-2 -top-2 opacity-5 scale-150 rotate-12 group-hover:scale-[2] transition-transform duration-700">
                 <Icon className="w-20 h-20 text-white" />
             </div>

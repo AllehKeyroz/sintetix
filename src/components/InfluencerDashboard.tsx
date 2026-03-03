@@ -271,7 +271,7 @@ export function InfluencerDashboard({
     }
 
     return (
-        <div className="flex-1 overflow-y-auto p-12 bg-background relative selection:bg-primary/20">
+        <div className="flex-1 overflow-y-auto p-4 md:p-12 bg-background relative selection:bg-primary/20">
             {/* Custom Toast Notification */}
             <AnimatePresence>
                 {showSaveSuccess && (
@@ -288,7 +288,7 @@ export function InfluencerDashboard({
             </AnimatePresence>
 
             {/* Admin Controls */}
-            <div className="absolute top-8 right-12 flex gap-4 z-50">
+            <div className="absolute top-4 right-4 md:top-8 md:right-12 flex gap-2 md:gap-4 z-50">
                 <button
                     onClick={() => {
                         const url = `${window.location.origin}/share/${influencerId}`
@@ -323,7 +323,7 @@ export function InfluencerDashboard({
 
             {/* Main Content Layout */}
             <div className="max-w-6xl mx-auto pb-32">
-                <div className="grid grid-cols-12 gap-16 mb-20 items-stretch">
+                <div className="grid grid-cols-12 gap-8 md:gap-16 mb-20 items-stretch mt-12 md:mt-0">
                     {/* Left Side: Profile Image */}
                     <div className="col-span-12 lg:col-span-5">
                         <div className="relative group aspect-square rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl bg-secondary">
@@ -367,7 +367,7 @@ export function InfluencerDashboard({
                         </div>
 
                         <div className="relative mb-8">
-                            <h1 className="text-7xl md:text-8xl font-black tracking-tighter text-white uppercase italic selection:text-primary">
+                            <h1 className="text-5xl md:text-8xl font-black tracking-tighter text-white uppercase italic selection:text-primary">
                                 <span className="text-white/20">#</span>{editedData.name}
                             </h1>
                             <div className="absolute -bottom-4 left-0 w-32 h-1 bg-primary rounded-full" />
@@ -443,7 +443,7 @@ export function InfluencerDashboard({
                             </div>
                         </div>
 
-                        <div className="mt-10 flex gap-6">
+                        <div className="mt-10 flex flex-col sm:flex-row gap-4 sm:gap-6">
                             <div className="flex items-center gap-3 px-6 py-3 bg-white/5 rounded-2xl border border-white/5 group hover:bg-white/10 transition-all cursor-pointer">
                                 <Instagram className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Instagram Feed</span>
@@ -459,7 +459,7 @@ export function InfluencerDashboard({
                 </div>
 
                 {/* Extended Narrative Dossier Section */}
-                <div className="pt-20 mt-20 border-t border-white/5">
+                <div className="pt-10 md:pt-20 mt-10 md:mt-20 border-t border-white/5">
                     <div className="flex items-center gap-6 mb-12">
                         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                             <BookOpen className="w-6 h-6 text-primary" />

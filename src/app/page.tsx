@@ -15,12 +15,14 @@ import { useInfluencers } from "@/hooks/useFirebase";
 import { ModuleType } from "@/lib/actions";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminModels } from "@/components/AdminModels";
+import { Menu, Crown } from "lucide-react";
 
 function AppContent() {
   const { user, profile, loading } = useAuth();
   const { influencers, loading: loadingInfluencers } = useInfluencers(profile?.agencyId);
   const [selectedId, setSelectedId] = useState<string | null | undefined>(undefined);
   const [activeModule, setActiveModule] = useState<ModuleType>("dashboard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const isAdmin = profile?.role === "admin";
 
@@ -100,14 +102,44 @@ function AppContent() {
   }
 
   return (
-    <main className="flex h-screen bg-background text-foreground overflow-hidden">
+    <main className="flex flex-col md:flex-row h-[100dvh] bg-background text-foreground overflow-hidden">
+      {/* Mobile Top Bar */}
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-white/5 bg-[#050505] z-30 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.3)] shrink-0">
+            <Crown className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h1 className="font-black text-sm tracking-tight text-white uppercase italic leading-none">
+              Sintetix <span className="text-primary not-italic">Agency</span>
+            </h1>
+          </div>
+        </div>
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 rounded-xl bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white transition-all flex items-center justify-center"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </div>
+
       <Sidebar
-        onSelectInfluencer={(id) => setSelectedId(id)}
+        onSelectInfluencer={(id) => {
+          setSelectedId(id)
+          setIsSidebarOpen(false)
+        }}
         selectedId={selectedId || null}
         activeModule={activeModule}
-        onModuleChange={(m) => setActiveModule(m)}
+        onModuleChange={(m) => {
+          setActiveModule(m)
+          setIsSidebarOpen(false)
+        }}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
-      {renderModule()}
+      <div className="flex-1 overflow-hidden flex flex-col min-w-0 bg-background relative z-10 w-full">
+        {renderModule()}
+      </div>
     </main>
   );
 }

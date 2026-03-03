@@ -770,8 +770,8 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
 
     return (
         <div className="flex-1 flex flex-col bg-background relative overflow-hidden">
-            <div className="px-11 py-6 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-40 flex-wrap gap-y-4">
-                <div className="flex gap-4 flex-wrap">
+            <div className="px-4 md:px-11 py-4 md:py-6 flex flex-col md:flex-row items-stretch md:items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-40 gap-y-4">
+                <div className="flex gap-2 md:gap-4 overflow-x-auto no-scrollbar pb-2 md:pb-0 shrink-0 w-full md:w-auto">
                     {dynamicCategories.length > 0 && (
                         dynamicCategories.map(cat => {
                             const Icon = AVAILABLE_ICONS.find(i => i.name === cat.icon)?.icon || Sparkles
@@ -829,7 +829,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                     )}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 justify-between md:justify-end w-full md:w-auto">
                     <div className="flex items-center bg-black/40 border border-white/10 rounded-xl p-1 shadow-inner relative">
 
                         {/* Seletor Customizado de Aspect Ratio */}
@@ -908,7 +908,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
             </div>
 
             <div className="flex-1 flex min-h-0 overflow-hidden">
-                <div className="w-72 shrink-0 flex flex-col gap-6 p-8 border-r border-white/5 bg-black/20">
+                <div className="hidden md:flex w-72 shrink-0 flex-col gap-6 p-8 border-r border-white/5 bg-black/20">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-xs font-black uppercase text-white tracking-widest flex items-center gap-2"><MessageSquare className="w-4 h-4 text-primary" /> Histórico</h3>
                         <button onClick={handleNewChat} className="p-1.5 bg-primary/20 text-primary rounded-md hover:bg-primary/40 transition-colors"><Plus className="w-3 h-3" /></button>
@@ -927,8 +927,8 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
 
                 </div>
 
-                <div className="flex-1 flex flex-col gap-6 pl-8 relative min-h-0 overflow-hidden">
-                    <div className="flex-1 overflow-y-auto pr-4 no-scrollbar pb-32 space-y-8">
+                <div className="flex-1 flex flex-col gap-6 px-4 md:pl-8 md:pr-0 relative min-h-0 overflow-hidden mt-4 md:mt-0">
+                    <div className="flex-1 overflow-y-auto pr-0 md:pr-4 no-scrollbar pb-40 md:pb-32 space-y-8">
                         {history.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center opacity-20">
                                 <Activity className="w-16 h-16 mb-4" />
@@ -1055,7 +1055,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                         <div id="chat-bottom" />
                     </div>
 
-                    <div className="absolute bottom-0 left-8 right-2 bg-background pt-2 pb-2 z-10 before:absolute before:inset-x-0 before:bottom-full before:h-8 before:bg-gradient-to-t before:from-background before:to-transparent before:pointer-events-none">
+                    <div className="absolute bottom-0 left-0 right-0 md:left-8 md:right-2 bg-background pt-2 pb-4 md:pb-2 z-10 before:absolute before:inset-x-0 before:bottom-full before:h-8 before:bg-gradient-to-t before:from-background before:to-transparent before:pointer-events-none px-4 md:px-0">
 
                         {/* Renderizar Inputs de Imagem (incluindo Origem se mapeado) */}
                         {(() => {

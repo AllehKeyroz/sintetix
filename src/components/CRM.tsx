@@ -110,16 +110,16 @@ export function CRM({ influencerId }: { influencerId: string | null }) {
     }
 
     return (
-        <div className="flex-1 overflow-y-auto bg-background flex flex-col p-12 relative selection:bg-primary/20">
+        <div className="flex-1 overflow-y-auto bg-background flex flex-col p-4 md:p-12 relative selection:bg-primary/20">
             {/* Header Section */}
             <div className="max-w-7xl mx-auto w-full mb-12">
-                <div className="flex items-end justify-between mb-12">
+                <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 md:gap-0 mb-12">
                     <div>
                         <div className="flex items-center gap-4 mb-4 text-primary/60 font-bold text-[10px] uppercase tracking-[0.4em]">
                             <Target className="w-4 h-4" />
                             Business & CRM Intelligence
                         </div>
-                        <h2 className="text-5xl font-black tracking-tighter text-white uppercase">
+                        <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white uppercase">
                             Campanhas <span className="text-primary italic">&</span> Contratos
                         </h2>
                     </div>
@@ -134,7 +134,7 @@ export function CRM({ influencerId }: { influencerId: string | null }) {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-4 gap-6 mb-16">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                     {[
                         { label: "Total Gerado", value: "R$ 0,00", icon: DollarSign, color: "text-green-400" },
                         { label: "Campanhas Ativas", value: campaigns.filter(c => c.status === "active").length.toString(), icon: Target, color: "text-primary" },
@@ -174,7 +174,7 @@ export function CRM({ influencerId }: { influencerId: string | null }) {
                     ) : (
                         <div className="grid grid-cols-1 gap-4">
                             {campaigns.map((camp) => (
-                                <div key={camp.id} className="group bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 p-8 rounded-[2.5rem] flex items-center gap-8 transition-all relative overflow-hidden">
+                                <div key={camp.id} className="group bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 p-6 md:p-8 rounded-[2.5rem] flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8 transition-all relative overflow-hidden">
                                     <div className={cn("w-2 h-12 rounded-full", camp.status === 'active' ? 'bg-primary' : 'bg-muted-foreground/20')} />
 
                                     <div className="flex-1 min-w-0">
@@ -187,7 +187,7 @@ export function CRM({ influencerId }: { influencerId: string | null }) {
                                         <h3 className="text-xl font-black text-white group-hover:text-primary transition-colors">{camp.brand} <span className="text-white/30 ml-2 font-normal">— {camp.title}</span></h3>
                                     </div>
 
-                                    <div className="flex items-center gap-12 text-right">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-12 mt-4 md:mt-0 text-left md:text-right w-full md:w-auto">
                                         <div>
                                             <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1">Budget Est.</p>
                                             <p className="text-sm font-black text-white">{camp.value || "A definir"}</p>
@@ -232,7 +232,7 @@ export function CRM({ influencerId }: { influencerId: string | null }) {
                             </div>
 
                             <form onSubmit={handleCreateCampaign} className="p-10 space-y-8">
-                                <div className="grid grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-2">
                                         <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Marca / Anunciante</label>
                                         <input
@@ -253,7 +253,7 @@ export function CRM({ influencerId }: { influencerId: string | null }) {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                     <div className="space-y-2">
                                         <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Status</label>
                                         <select

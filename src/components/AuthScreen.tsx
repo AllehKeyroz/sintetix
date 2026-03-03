@@ -120,25 +120,25 @@ export function AuthScreen() {
                     transition={{ duration: 0.6 }}
                     className="w-full max-w-md mx-auto"
                 >
-                    <div className="bg-[#0c0c0e]/80 backdrop-blur-3xl p-12 rounded-[3.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] relative overflow-hidden">
-                        <div className="lg:hidden flex flex-col items-center mb-12">
-                            <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-2xl mb-6">
-                                <Crown className="w-8 h-8 text-black" />
+                    <div className="bg-[#0c0c0e]/80 backdrop-blur-3xl p-6 md:p-12 rounded-[2rem] md:rounded-[3.5rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] relative overflow-hidden">
+                        <div className="lg:hidden flex flex-col items-center mb-8 md:mb-12">
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-white flex items-center justify-center shadow-2xl mb-4 md:mb-6">
+                                <Crown className="w-6 h-6 md:w-8 md:h-8 text-black" />
                             </div>
-                            <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Sintetix <span className="text-primary italic">Agency</span></h2>
+                            <h2 className="text-2xl md:text-3xl font-black text-white tracking-tighter uppercase leading-none">Sintetix <span className="text-primary italic">Agency</span></h2>
                         </div>
 
-                        <div className="mb-12">
-                            <h2 className="text-2xl font-black text-white tracking-tight uppercase leading-none mb-4">
+                        <div className="mb-8 md:mb-12">
+                            <h2 className="text-xl md:text-2xl font-black text-white tracking-tight uppercase leading-none mb-4">
                                 {isLogin ? 'Bem-vindo ao' : 'Junte-se ao'}<br />
                                 <span className="text-primary">Comando Central</span>
                             </h2>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                            <p className="text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
                                 {isLogin ? 'Obrigatória a Identificação Visual' : 'Inicie o Processo de Certificação'}
                             </p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
                             <div className="space-y-2">
                                 <label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest ml-1">Frequência Digital (Email)</label>
                                 <div className="relative group">
@@ -148,7 +148,7 @@ export function AuthScreen() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-14 pr-6 py-5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/10"
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 md:pl-14 pr-4 md:pr-6 py-4 md:py-5 text-xs md:text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/10"
                                         placeholder="agente@sintetix.agency"
                                     />
                                 </div>
@@ -163,7 +163,7 @@ export function AuthScreen() {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-14 pr-6 py-5 text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/10"
+                                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 md:pl-14 pr-4 md:pr-6 py-4 md:py-5 text-xs md:text-sm font-bold text-white focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all placeholder:text-white/10"
                                         placeholder="••••••••••••"
                                     />
                                 </div>

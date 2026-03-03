@@ -99,19 +99,19 @@ export function Wardrobe({ influencerId }: { influencerId: string | null }) {
     }
 
     return (
-        <div className="flex-1 flex flex-col bg-background p-12 overflow-hidden">
-            <header className="flex justify-between items-end mb-12">
+        <div className="flex-1 flex flex-col bg-background p-4 md:p-12 overflow-hidden">
+            <header className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 md:gap-0 mb-12">
                 <div>
                     <div className="flex items-center gap-4 mb-4 text-primary/60 font-bold text-[10px] uppercase tracking-[0.4em]">
                         <Shirt className="w-4 h-4" />
                         Virtual Apparel Inventory
                     </div>
-                    <h2 className="text-5xl font-black tracking-tighter text-white uppercase leading-none">
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-white uppercase leading-none">
                         Acervo de <span className="text-primary italic">Estilo</span>
                     </h2>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col md:flex-row gap-2 md:gap-4 w-full md:w-auto">
                     <button
                         onClick={() => setIsManageCategoriesOpen(true)}
                         className="p-4 bg-white/5 text-muted-foreground rounded-2xl hover:bg-white/10 hover:text-white transition-all shadow-lg flex items-center gap-3"
@@ -125,7 +125,8 @@ export function Wardrobe({ influencerId }: { influencerId: string | null }) {
                         className="px-8 py-4 bg-white text-black rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-primary hover:text-white transition-all flex items-center gap-3"
                     >
                         <Plus className="w-4 h-4" />
-                        Catalogar Nova Peça
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden sm:block">Catalogar Nova Peça</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] block sm:hidden">Catalogar</span>
                     </button>
                 </div>
             </header>
@@ -176,7 +177,7 @@ export function Wardrobe({ influencerId }: { influencerId: string | null }) {
                         <p className="text-sm text-muted-foreground max-w-xs">Organize as peças que definem a identidade visual do talento.</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 pb-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8 pb-10 pr-2">
                         {items.map((item, idx) => (
                             <motion.div
                                 key={item.id}

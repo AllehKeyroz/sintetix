@@ -173,21 +173,21 @@ export function Calendar({ influencerId }: { influencerId: string | null }) {
     return (
         <div className="flex-1 h-screen overflow-hidden bg-background flex flex-col">
             {/* Header Simplified */}
-            <header className="p-8 border-b border-white/5 flex justify-between items-center bg-black/20 backdrop-blur-md">
+            <header className="p-4 md:p-8 border-b border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-0 bg-black/20 backdrop-blur-md">
                 <div className="flex items-center gap-6">
                     <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
                         <CalendarIcon className="w-6 h-6 text-primary" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black tracking-tighter text-white uppercase leading-none">
+                        <h2 className="text-xl md:text-2xl font-black tracking-tighter text-white uppercase leading-none">
                             Editorial <span className="text-primary italic">Insights</span>
                         </h2>
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] mt-1">Gestão de Pulsação Digital</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full md:w-auto">
+                    <div className="flex items-center justify-between sm:justify-center gap-1 bg-white/5 p-1 rounded-xl border border-white/5 w-full sm:w-auto">
                         <button onClick={handlePrevMonth} className="p-2 hover:bg-white/5 rounded-lg transition-all">
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -200,16 +200,16 @@ export function Calendar({ influencerId }: { influencerId: string | null }) {
                     </div>
                     <button
                         onClick={() => setIsAddModalOpen(true)}
-                        className="p-3 bg-white text-black rounded-xl hover:bg-primary hover:text-white transition-all shadow-xl"
+                        className="p-3 bg-white text-black rounded-xl hover:bg-primary hover:text-white transition-all shadow-xl flex items-center justify-center sm:w-auto w-full"
                     >
                         <Plus className="w-5 h-5" />
                     </button>
                 </div>
             </header>
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
                 {/* Left: Compact Calendar Grid */}
-                <div className="flex-1 p-8 overflow-y-auto hidden-scrollbar">
+                <div className="flex-1 p-4 md:p-8 lg:overflow-y-auto hidden-scrollbar">
                     <div className="max-w-3xl mx-auto">
                         <div className="grid grid-cols-7 mb-4">
                             {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map(day => (
@@ -222,7 +222,7 @@ export function Calendar({ influencerId }: { influencerId: string | null }) {
                             {renderDays()}
                         </div>
 
-                        <div className="mt-12 grid grid-cols-3 gap-8">
+                        <div className="mt-8 md:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-8 mb-8 lg:mb-0">
                             <div className="flex items-center gap-3">
                                 <div className="w-2 h-2 rounded-full bg-primary" />
                                 <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Agendado</p>
@@ -240,13 +240,13 @@ export function Calendar({ influencerId }: { influencerId: string | null }) {
                 </div>
 
                 {/* Right: Agenda/Schedules List */}
-                <div className="w-[450px] border-l border-white/5 bg-white/[0.01] flex flex-col p-10">
+                <div className="w-full lg:w-[450px] border-t lg:border-t-0 lg:border-l border-white/5 bg-white/[0.01] flex flex-col p-4 md:p-10 shrink-0 lg:h-full h-auto min-h-[500px] lg:min-h-0">
                     <div className="mb-10">
                         <div className="flex items-center gap-3 mb-2">
                             <Clock className="w-4 h-4 text-primary" />
                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Timeline do Dia</span>
                         </div>
-                        <h3 className="text-4xl font-black text-white uppercase tracking-tighter">
+                        <h3 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter mt-1">
                             {selectedDate.getDate()} <span className="text-white/20">de</span> {monthNames[selectedDate.getMonth()]}
                         </h3>
                     </div>
@@ -301,7 +301,7 @@ export function Calendar({ influencerId }: { influencerId: string | null }) {
 
                     <button
                         onClick={() => setIsAddModalOpen(true)}
-                        className="w-full mt-10 py-5 bg-white text-black rounded-3xl font-black text-[10px] uppercase tracking-[0.4em] hover:bg-primary hover:text-white transition-all shadow-2xl flex items-center justify-center gap-3"
+                        className="w-full mt-6 lg:mt-10 py-5 bg-white text-black rounded-3xl font-black text-[10px] uppercase tracking-[0.4em] hover:bg-primary hover:text-white transition-all shadow-2xl flex items-center justify-center gap-3"
                     >
                         Novo Agendamento
                         <ArrowRight className="w-4 h-4" />

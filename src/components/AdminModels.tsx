@@ -232,8 +232,8 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
 
     return (
         <div className="flex-1 overflow-y-auto bg-background flex flex-col relative [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            <div className="p-8 max-w-6xl mx-auto w-full">
-                <div className="flex items-center justify-between mb-8">
+            <div className="p-4 md:p-8 max-w-6xl mx-auto w-full">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-8">
                     <div>
                         <h2 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
                             <Globe className="w-8 h-8 text-primary" />
@@ -244,7 +244,7 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
                         <button
                             onClick={() => setIsCategoryModalOpen(true)}
                             className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all text-white/50 hover:text-white group"
@@ -256,7 +256,7 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
                         {view === "list" && (
                             <button
                                 onClick={startNew}
-                                className="bg-primary text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20"
+                                className="w-full sm:w-auto bg-primary text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center justify-center sm:justify-start gap-2 shadow-lg shadow-primary/20"
                             >
                                 <Plus className="w-4 h-4" />
                                 Novo Modelo
@@ -336,7 +336,7 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
                                     </button>
                                 )}
                             </h3>
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-wrap items-center gap-3">
                                 <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Publicar?</span>
 
                                 {editingTemplate?.id && (
@@ -366,7 +366,7 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
                         </div>
 
                         <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[9px] uppercase font-black text-muted-foreground tracking-widest ml-1">Nome do Template</label>
                                     <input
@@ -448,7 +448,7 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
                             {parsedNodes && (
                                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6">
                                     <h4 className="text-[10px] font-black uppercase text-primary tracking-widest pb-2 border-b border-white/5">Mapeamento Técnico de Nós</h4>
-                                    <div className="grid grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                         {/* Mapeamentos básicos baseados em IDs */}
                                         <div className="space-y-4">
                                             {[
@@ -695,7 +695,7 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
                                 </div>
                             )}
 
-                            <div className="flex gap-4 pt-6 mt-6 border-t border-white/10">
+                            <div className="flex flex-col sm:flex-row gap-4 pt-6 mt-6 border-t border-white/10">
                                 <button
                                     onClick={() => { setView("list"); setEditingTemplate(null) }}
                                     className="flex-1 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-white transition-all bg-white/5"
