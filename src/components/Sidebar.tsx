@@ -24,7 +24,8 @@ import {
   LayoutPanelLeft,
   Key,
   Copy,
-  X
+  X,
+  Bot
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
@@ -306,6 +307,12 @@ export function Sidebar({
                 onClick={() => onModuleChange("admin_models")}
               />
               <NavItem
+                icon={Key}
+                label="Configurador Nordy"
+                active={activeModule === "admin_cookies"}
+                onClick={() => onModuleChange("admin_cookies")}
+              />
+              <NavItem
                 icon={Sparkles}
                 label="Studio de Testes"
                 active={activeModule === "admin_studio"}
@@ -316,6 +323,12 @@ export function Sidebar({
                 label="Galeria (Global)"
                 active={activeModule === "admin_gallery"}
                 onClick={() => onModuleChange("admin_gallery")}
+              />
+              <NavItem
+                icon={Bot}
+                label="A.I. Agentes"
+                active={activeModule === "agent_chat"}
+                onClick={() => onModuleChange("agent_chat")}
               />
             </>
           ) : (
@@ -367,6 +380,12 @@ export function Sidebar({
                     label="Negócios / CRM"
                     active={activeModule === "crm"}
                     onClick={() => onModuleChange("crm")}
+                  />
+                  <NavItem
+                    icon={Bot}
+                    label="A.I. Agentes"
+                    active={activeModule === "agent_chat"}
+                    onClick={() => onModuleChange("agent_chat")}
                   />
                 </>
               )}

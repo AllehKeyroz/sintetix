@@ -17,15 +17,16 @@ export async function addGeneratedImageToGallery(influencerId: string, item: {
     url: string,
     prompt: string,
     model_info: string,
-    type: string // "studio" / "wardrobe" etc
+    type: string, // "studio" / "wardrobe" etc
+    agencyName?: string
 }) {
     const moodboardRef = collection(db, "influencers", influencerId, "moodboard");
     await addDoc(moodboardRef, {
         title: item.title,
         type: item.type,
-        url: item.url, // Usando a URL da API, em produção seria ideal baixar em background pro firebase storage
+        url: item.url,
         prompt: item.prompt,
-        obs: `Modelo: ${item.model_info}`,
+        obs: `Modelo: ${item.model_info}${item.agencyName ? ` | Agência: ${item.agencyName}` : ''}`,
         albumId: null,
         categoryId: null,
         created_at: Timestamp.now()

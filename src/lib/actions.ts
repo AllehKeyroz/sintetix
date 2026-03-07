@@ -6,6 +6,8 @@ import {
     updateDoc,
     addDoc,
     collection,
+    getDocs,
+    getDoc,
     deleteDoc,
     setDoc,
     Timestamp
@@ -13,7 +15,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // --- TIPOS ---
-export type ModuleType = "dashboard" | "identity" | "gallery" | "wardrobe" | "studio" | "calendar" | "crm" | "settings" | "admin_dashboard" | "admin_models" | "admin_studio" | "admin_gallery"
+export type ModuleType = "dashboard" | "identity" | "gallery" | "wardrobe" | "studio" | "calendar" | "crm" | "settings" | "admin_dashboard" | "admin_models" | "admin_studio" | "admin_gallery" | "admin_cookies" | "agent_chat"
 
 // --- CRUD ÁLBUNS ---
 
@@ -56,6 +58,17 @@ export async function updateInfluencer(id: string, data: any, imageFile?: File |
     await updateDoc(docRef, {
         ...data,
         image: imageUrl,
+        updated_at: Timestamp.now()
+    });
+}
+
+/**
+ * Atualiza o perfil do usuário (ex: nome da agência)
+ */
+export async function updateUserProfile(uid: string, data: any) {
+    const docRef = doc(db, "users", uid);
+    await updateDoc(docRef, {
+        ...data,
         updated_at: Timestamp.now()
     });
 }
@@ -237,4 +250,159 @@ export async function updatePost(influencerId: string, postId: string, data: any
 export async function deletePost(influencerId: string, postId: string) {
     const docRef = doc(db, "influencers", influencerId, "posts", postId);
     await deleteDoc(docRef);
+}
+
+// --- GEMINI KEY & AGENTS ---
+
+/**
+ * Salva a chave do Gemini (só admin)
+ */
+export async function saveGeminiKey(key: string) {
+    const docRef = doc(db, "settings", "keys");
+    await setDoc(docRef, { geminiKey: key }, { merge: true });
+}
+
+export async function createAgent(agent: { name: string, systemPrompt: string, modelId: string, isPublished: boolean }) {
+    const agentsRef = collection(db, "agents");
+    const docRef = await addDoc(agentsRef, {
+        ...agent,
+        created_at: Timestamp.now()
+    });
+    return docRef.id;
+}
+
+export async function updateAgent(id: string, agent: Partial<{ name: string, systemPrompt: string, modelId: string, isPublished: boolean }>) {
+    const docRef = doc(db, "agents", id);
+    await updateDoc(docRef, {
+        ...agent,
+        updated_at: Timestamp.now()
+    });
+}
+
+export async function deleteAgent(id: string) {
+    const docRef = doc(db, "agents", id);
+    await deleteDoc(docRef);
+}
+
+// --- CHAT SESSIONS ---
+
+export async function createChatSession(userId: string, data: { agentId: string; messages: any[]; title: string; }) {
+    const chatsRef = collection(db, "users", userId, "chats");
+    const docRef = await addDoc(chatsRef, {
+        ...data,
+        updated_at: Timestamp.now(),
+        created_at: Timestamp.now()
+    });
+    return docRef.id;
+}
+
+export async function updateChatSession(userId: string, chatId: string, messages: any[]) {
+    const docRef = doc(db, "users", userId, "chats", chatId);
+    await updateDoc(docRef, {
+        messages,
+        updated_at: Timestamp.now()
+    });
+}
+
+export async function deleteChatSession(userId: string, chatId: string) {
+    const docRef = doc(db, "users", userId, "chats", chatId);
+    await deleteDoc(docRef);
+}
+
+/**
+ * Salva os cookies do Nordy para uma agência ou admin
+ * @param targetId O agencyId ou "admin"
+ * @param cookies String de cookies vinda da extensão
+ * @param meta Dados opcionais como cota e label
+ */
+export async function saveNordyCookies(targetId: string, cookies: string, meta?: { quota_total?: number, quota_used?: number, label?: string, email?: string | null }) {
+    const docRef = doc(db, "settings", `nordy_${targetId}`);
+
+    // Normalização básica de cookies
+    let normalizedCookies = cookies;
+    if (typeof cookies === "string" && !cookies.includes("=")) {
+        normalizedCookies = `nordy-auth=${cookies}`;
+    }
+
+    await setDoc(docRef, {
+        cookies: normalizedCookies,
+        ...meta,
+        targetId,
+        updated_at: Timestamp.now()
+    }, { merge: true });
+}
+
+/**
+ * Lista todos os cookies salvos, enriquecendo com o nome da agência vindo do perfil
+ */
+export async function listNordyCookies() {
+    const settingsRef = collection(db, "settings");
+    const querySnapshot = await getDocs(settingsRef);
+
+    const cookies = await Promise.all(querySnapshot.docs
+        .filter((doc: any) => doc.id.startsWith("nordy_"))
+        .map(async (docSnap: any) => {
+            const data = docSnap.data();
+            const targetId = docSnap.id.replace("nordy_", "");
+
+            // Tenta buscar o nome amigável da agência no perfil do usuário
+            let nameFromProfile = null;
+            if (targetId !== "admin") {
+                try {
+                    const userRef = doc(db, "users", targetId);
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                        nameFromProfile = userSnap.data().agencyName;
+                    }
+                } catch (e) { }
+            }
+
+            return {
+                id: docSnap.id,
+                targetId,
+                ...data,
+                agencyName: nameFromProfile || data.agencyName // Fallback para o que tiver no doc do cookie
+            };
+        }));
+
+    const globalRef = doc(db, "settings", "global_config");
+    const globalSnap = await getDoc(globalRef);
+    const activeMaster = globalSnap.exists() ? globalSnap.data().master_nordy_targetId : "admin";
+
+    return {
+        cookies: cookies.sort((a: any, b: any) => (b.updated_at?.seconds || 0) - (a.updated_at?.seconds || 0)),
+        activeMaster
+    };
+}
+
+/**
+ * Deleta cookies de uma agência
+ */
+export async function deleteNordyCookie(targetId: string) {
+    const docRef = doc(db, "settings", `nordy_${targetId}`);
+    await deleteDoc(docRef);
+}
+
+/**
+ * Define qual cookie será o "Ativo Global" (usado como fallback master)
+ */
+export async function setActiveNordyCookie(targetId: string) {
+    const docRef = doc(db, "settings", "global_config");
+    await setDoc(docRef, {
+        master_nordy_targetId: targetId,
+        updated_at: Timestamp.now()
+    }, { merge: true });
+}
+
+/**
+ * Recupera os cookies do Nordy salvos no Firestore
+ */
+export async function getNordyCookies(targetId: string): Promise<string | null> {
+    const docRef = doc(db, "settings", `nordy_${targetId}`);
+    const { getDoc } = await import("firebase/firestore");
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+        return snap.data().cookies as string;
+    }
+    return null;
 }

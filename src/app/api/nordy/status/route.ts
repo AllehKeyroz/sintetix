@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getNordyCookiesServer } from "@/lib/nordy_server";
 
 export async function GET(req: Request) {
     try {
@@ -14,15 +15,21 @@ export async function GET(req: Request) {
 
         const targetId = searchParams.get("targetId") || "admin";
 
-        let cookie = process.env.NORDY_COOKIE;
-        if (targetId && targetId !== "admin") {
-            cookie = process.env[`NORDY_COOKIE_${targetId}`] || process.env.NORDY_COOKIE;
+        // 1. Tentar pegar do Firestore (Mais atualizado)
+        let cookie = await getNordyCookiesServer(targetId);
+
+        // 2. Se não houver no Firestore, tentar do .env
+        if (!cookie) {
+            cookie = process.env.NORDY_COOKIE as string;
+            if (targetId && targetId !== "admin") {
+                cookie = process.env[`NORDY_COOKIE_${targetId}`] as string || process.env.NORDY_COOKIE as string;
+            }
         }
 
         if (!cookie) {
             return NextResponse.json(
-                { error: "NORDY_COOKIE não configurado no .env.local" },
-                { status: 500 }
+                { error: "NORDY_COOKIE não encontrado no Firestore ou ambiente" },
+                { status: 401 }
             );
         }
 
@@ -51,7 +58,6 @@ export async function GET(req: Request) {
 
             if (status === "done" || status === "completed" || status === "success") {
                 console.log(`=== NORDY DONE [${jobId}] - Payload Size: ${textResponse.length} chars ===`);
-                // Log only a snippet of the result to avoid terminal lag/Next.js warnings
                 console.log("Snippet:", textResponse.substring(0, 500) + "...");
             }
             return NextResponse.json(data);

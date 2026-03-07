@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getNordyCookiesServer } from "@/lib/nordy_server";
 
 export async function POST(req: Request) {
     try {
@@ -17,15 +18,21 @@ export async function POST(req: Request) {
         const { searchParams } = new URL(req.url);
         const targetId = searchParams.get("targetId") || "admin";
 
-        let cookie = process.env.NORDY_COOKIE;
-        if (targetId && targetId !== "admin") {
-            cookie = process.env[`NORDY_COOKIE_${targetId}`] || process.env.NORDY_COOKIE;
+        // 1. Tentar pegar do Firestore (Mais atualizado)
+        let cookie = await getNordyCookiesServer(targetId);
+
+        // 2. Se não houver no Firestore, tentar do .env
+        if (!cookie) {
+            cookie = process.env.NORDY_COOKIE as string;
+            if (targetId && targetId !== "admin") {
+                cookie = process.env[`NORDY_COOKIE_${targetId}`] as string || process.env.NORDY_COOKIE as string;
+            }
         }
 
         if (!cookie) {
             return NextResponse.json(
-                { error: "NORDY_COOKIE não configurado. Por favor, atualize no painel Admin." },
-                { status: 500 }
+                { error: "NORDY_COOKIE não encontrado. Conecte sua extensão no painel Studio." },
+                { status: 401 }
             );
         }
 
@@ -43,9 +50,9 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 clientId: clientId,
-                workflow: activeWorkflowId, // ID global ou por modelo
+                workflow: activeWorkflowId,
                 prompt: JSON.stringify({
-                    output: prompt, // O front envia o JSON do workflow já parseado (como objeto JavaScript literal)
+                    output: prompt,
                 }),
             }),
         });

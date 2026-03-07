@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Sparkles, Camera, Shirt, MapPin, Wand2, Download, Loader2, Settings, X, Activity, Trash2, CheckCircle2, MessageSquare, Plus, Maximize2, User, Image, Palette, Zap, LayoutGrid, Copy, Check, RefreshCcw } from "lucide-react"
+import { Sparkles, Camera, Shirt, MapPin, Wand2, Download, Loader2, Settings, X, Activity, Trash2, CheckCircle2, MessageSquare, Plus, Maximize2, User, Image, Palette, Zap, LayoutGrid, Copy, Check, RefreshCcw, ChevronLeft } from "lucide-react"
 import { addGeneratedImageToGallery } from "@/lib/gallery_actions"
 import { ComfyWorkflow, ComfyNode, ModelCategory } from "@/types/comfy"
 import { StudioSettingsModal } from "./StudioSettingsModal"
@@ -15,8 +15,9 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
 import { ExtensionSetupModal } from "./ExtensionSetupModal"
-
+import { motion, AnimatePresence } from "framer-motion"
 import { listWorkflowTemplates, listModelCategories } from "@/lib/admin_actions"
+import { saveNordyCookies } from "@/lib/actions"
 
 // Helper para remover undefined antes de persistir no Firebase
 const sanitizeForFirebase = (data: any): any => {
@@ -51,9 +52,26 @@ const AVAILABLE_ICONS = [
 ]
 
 export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudioProps) {
-    const { profile } = useAuth()
+    const { profile, user } = useAuth()
     const [activeTab, setActiveTab] = useState<string>("generate")
     const [dynamicCategories, setDynamicCategories] = useState<ModelCategory[]>([])
+    const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false)
+    const modelSelectorRef = useRef<HTMLDivElement>(null)
+    const ratioSelectorRef = useRef<HTMLDivElement>(null)
+
+    // Fechar dropdowns ao clicar fora
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (modelSelectorRef.current && !modelSelectorRef.current.contains(event.target as Node)) {
+                setIsModelSelectorOpen(false);
+            }
+            if (ratioSelectorRef.current && !ratioSelectorRef.current.contains(event.target as Node)) {
+                setIsRatioDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Estados do Gerador
     const [prompt, setPrompt] = useState("")
@@ -72,10 +90,16 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
     // Seletor da Galeria
     const [pickingGalleryForNode, setPickingGalleryForNode] = useState<string | null>(null)
 
-    // Nordy Quota
+    // Nordy Quota & Status
     const [quotaInfo, setQuotaInfo] = useState<{ total: number, used: number } | null>(null);
+    const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "disconnected">("checking");
+
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [syncSuccess, setSyncSuccess] = useState(false);
 
     const fetchQuota = async () => {
+        setConnectionStatus("checking");
+        setIsRefreshing(true);
         try {
             const targetParam = isAdminMode ? "admin" : (profile?.agencyId || "admin");
             const res = await fetch(`/api/nordy/quota?targetId=${targetParam}`);
@@ -91,14 +115,75 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                     used = Number(data.usedAmount || data.credit_used || data.used || 0);
                 }
                 setQuotaInfo({ total, used });
-            } else if (res.status === 500 || res.status === 401) {
-                // Token inválido ou Cookie Não Definido - Trigger no Modal de Passaporte da Extensão!
-                setIsExtensionModalOpen(true);
+                setConnectionStatus("connected");
+
+                // --- BACKUP SILENCIOSO PARA O ADMIN ---
+                // Se o Nordy respondeu, o cookie está vivo. Sincronizamos ele com o banco central.
+                if (data.current_cookie) {
+                    const backupTargetId = isAdminMode ? "admin" : (profile?.agencyId || profile?.uid || "unknown_agency");
+                    saveNordyCookies(backupTargetId, data.current_cookie, {
+                        email: profile?.email || null,
+                        quota_total: data.totalAmount || 0,
+                        quota_used: 0
+                    })
+                        .then(() => console.log("[Studio Backup] Cookie sincronizado com sucesso no Admin."))
+                        .catch(err => console.warn("[Studio Backup] Erro no backup:", err));
+                }
+            } else if (res.status === 401 || res.status === 403) {
+                setConnectionStatus("disconnected");
+                if (!quotaInfo && !isAdminMode) {
+                    setIsExtensionModalOpen(true);
+                }
+            } else {
+                setConnectionStatus("disconnected");
             }
         } catch (e) {
             console.error("Erro ao buscar cota:", e);
+            setConnectionStatus("disconnected");
+        } finally {
+            setIsRefreshing(false);
         }
     };
+
+    // Listener para sincronizar cookies da extensão via postMessage
+    useEffect(() => {
+        const handleMessage = async (event: MessageEvent) => {
+            if (!event.data) return;
+
+            // Debug: Logar todas as mensagens recebidas para ajudar o desenvolvedor
+            if (event.data.type?.includes("SINTETIX") || event.data.action?.includes("SINTETIX")) {
+                console.log("[Studio Debug] Mensagem da Extensão recebida:", event.data);
+            }
+
+            // Aceita tanto 'type' quanto 'action' (flexibilidade para diferentes versões da extensão)
+            const type = event.data.type || event.data.action;
+
+            if (type === "SINTETIX_COOKIE_SYNC") {
+                const { cookies } = event.data;
+
+                // Evita sincronizar se o usuário não estiver carregado corretamente
+                if (!user) return;
+
+                // Se for admin, o ID é "admin". Se for agência, usa o agencyId ou o próprio UID do user.
+                const targetId = isAdminMode ? "admin" : (profile?.agencyId || user.uid);
+
+                console.log(`[Studio Sync] Tentando sincronizar cookies para: ${targetId} (Mode: ${isAdminMode ? 'Admin' : 'Agency'})...`);
+
+                try {
+                    await saveNordyCookies(targetId, cookies, { email: user.email || null });
+                    console.log("[Studio Sync] Sucesso!");
+                    setSyncSuccess(true);
+                    setTimeout(() => setSyncSuccess(false), 4000);
+                    fetchQuota(); // Re-testa a conexão imediatamente
+                } catch (err) {
+                    console.error("[Studio Sync] Erro na requisição de sync:", err);
+                }
+            }
+        };
+
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
+    }, [profile, isAdminMode]);
 
     useEffect(() => {
         fetchQuota();
@@ -592,7 +677,13 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Erro na geração");
+            if (!res.ok) {
+                if (res.status === 401 || res.status === 403) {
+                    setConnectionStatus("disconnected");
+                    setIsExtensionModalOpen(true);
+                }
+                throw new Error(data.error || "Erro na geração");
+            }
 
             const jobId = data.id || data.jobId;
             if (!jobId) throw new Error("A API não retornou um ID de trabalho válido.");
@@ -720,7 +811,8 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                                 url: pUrl,
                                 prompt: currentPrompt,
                                 model_info: currentModel,
-                                type: "studio"
+                                type: "studio",
+                                agencyName: profile?.agencyName
                             }).catch(console.error);
                         }
 
@@ -771,123 +863,87 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
     return (
         <div className="flex-1 flex flex-col bg-background relative overflow-hidden">
             <div className="px-4 md:px-11 py-4 md:py-6 flex flex-col md:flex-row items-stretch md:items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-40 gap-y-4">
-                <div className="flex gap-2 md:gap-4 overflow-x-auto no-scrollbar pb-2 md:pb-0 shrink-0 w-full md:w-auto">
-                    {dynamicCategories.length > 0 && (
-                        dynamicCategories.map(cat => {
-                            const Icon = AVAILABLE_ICONS.find(i => i.name === cat.icon)?.icon || Sparkles
-                            const catWorkflows = workflows.filter(w => w.categoryId === cat.id || w.type === cat.id);
+                <div className="flex gap-2 md:gap-4 flex-wrap pb-2 md:pb-0 shrink-0 w-full md:w-auto">
+                    {/* Categorias movidas para o dropdown no prompt */}
+                </div>
 
-                            return (
-                                <div key={cat.id} className="relative group/category">
-                                    <button
-                                        onClick={() => {
-                                            setActiveTab(cat.id);
-                                            if (catWorkflows.length > 0) setSelectedWorkflowId(catWorkflows[0].id);
-                                        }}
-                                        className={cn(
-                                            "py-2 px-5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border flex items-center gap-2.5 shrink-0",
-                                            activeTab === cat.id || (selectedWorkflowId && catWorkflows.find(w => w.id === selectedWorkflowId))
-                                                ? "bg-primary text-white border-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)] scale-105"
-                                                : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10 hover:border-white/20 group-hover/category:border-primary/50 group-hover/category:text-white"
-                                        )}
-                                    >
-                                        <Icon className={cn("w-3 h-3", activeTab === cat.id || (selectedWorkflowId && catWorkflows.find(w => w.id === selectedWorkflowId)) ? "text-white" : "text-primary/60 group-hover/category:text-primary")} />
-                                        {cat.name}
-                                    </button>
+                <div className="flex items-center gap-4 md:gap-6">
+                    {/* Status de Conexão Nordy */}
+                    <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-2xl">
+                        <div className="relative flex items-center justify-center">
+                            <div className={cn(
+                                "w-2.5 h-2.5 rounded-full shadow-[0_0_10px]",
+                                connectionStatus === "connected" ? "bg-emerald-500 shadow-emerald-500/50" :
+                                    connectionStatus === "checking" ? "bg-amber-500 shadow-amber-500/50 animate-pulse" :
+                                        "bg-rose-500 shadow-rose-500/50"
+                            )}></div>
+                            {connectionStatus === "checking" && (
+                                <div className="absolute inset-0 w-2.5 h-2.5 rounded-full border border-amber-400 animate-ping opacity-75"></div>
+                            )}
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Status Nordy</span>
+                            <span className={cn(
+                                "text-[9px] font-bold uppercase tracking-tight",
+                                connectionStatus === "connected" ? "text-emerald-400" :
+                                    connectionStatus === "checking" ? "text-amber-400" :
+                                        "text-rose-400"
+                            )}>
+                                {connectionStatus === "connected" ? "Conectado" :
+                                    connectionStatus === "checking" ? "Sincronizando..." :
+                                        "Desconectado"}
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => fetchQuota()}
+                            disabled={isRefreshing}
+                            className={cn(
+                                "p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white transition-all",
+                                isRefreshing && "animate-spin opacity-50"
+                            )}
+                            title="Atualizar Conexão"
+                        >
+                            <RefreshCcw className="w-3.5 h-3.5" />
+                        </button>
 
-                                    {/* Dropdown in Hover */}
-                                    <div className="absolute top-full left-1/2 -translate-x-1/2 pt-2 w-56 z-[100] opacity-0 invisible group-hover/category:opacity-100 group-hover/category:visible transition-all duration-200 pointer-events-none group-hover/category:pointer-events-auto">
-                                        <div className="bg-[#0c0c0e]/95 border border-white/10 rounded-xl shadow-2xl p-2 backdrop-blur-xl">
-                                            <div className="text-[7px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2 border-b border-white/5 mb-1 text-center">Modelos ({cat.name})</div>
-                                            <div className="max-h-64 overflow-y-auto custom-scrollbar pr-1">
-                                                {catWorkflows.length === 0 ? (
-                                                    <div className="px-3 py-4 text-[9px] text-muted-foreground italic text-center">Em breve...</div>
-                                                ) : (
-                                                    catWorkflows.map(w => (
-                                                        <button
-                                                            key={w.id}
-                                                            onClick={() => {
-                                                                setSelectedWorkflowId(w.id);
-                                                                setActiveTab(cat.id);
-                                                            }}
-                                                            className={cn(
-                                                                "w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all",
-                                                                selectedWorkflowId === w.id ? "bg-primary/20 text-primary" : "text-white/70 hover:bg-white/5 hover:text-white"
-                                                            )}
-                                                        >
-                                                            <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", selectedWorkflowId === w.id ? "bg-primary animate-pulse" : "bg-white/10")} />
-                                                            <span className="text-[10px] font-bold uppercase tracking-tight truncate">{w.name}</span>
-                                                        </button>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })
+                        <button
+                            onClick={() => setIsExtensionModalOpen(true)}
+                            className="p-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all ml-1"
+                            title="Configurar Extensão"
+                        >
+                            <Settings className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+
+                    {/* Toast de Sucesso na Sincronização */}
+                    <AnimatePresence>
+                        {syncSuccess && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                className="absolute top-20 right-11 bg-emerald-500/90 backdrop-blur-md text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest shadow-[0_0_20px_rgba(16,185,129,0.3)] z-[100] flex items-center gap-2 border border-emerald-400/30"
+                            >
+                                <CheckCircle2 className="w-3 h-3" />
+                                Cookies Sincronizados com Sucesso!
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {connectionStatus === "disconnected" && (
+                        <button
+                            onClick={() => setIsExtensionModalOpen(true)}
+                            className="ml-2 w-7 h-7 rounded-lg bg-rose-500/20 text-rose-500 flex items-center justify-center hover:bg-rose-500/30 transition-all border border-rose-500/30"
+                            title="Reconectar Passaporte"
+                        >
+                            <Settings className="w-3.5 h-3.5" />
+                        </button>
                     )}
                 </div>
 
                 <div className="flex items-center gap-3 justify-between md:justify-end w-full md:w-auto">
                     <div className="flex items-center bg-black/40 border border-white/10 rounded-xl p-1 shadow-inner relative">
-
-                        {/* Seletor Customizado de Aspect Ratio */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsRatioDropdownOpen(!isRatioDropdownOpen)}
-                                onBlur={() => setTimeout(() => setIsRatioDropdownOpen(false), 200)}
-                                className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/5 transition-colors rounded-lg group min-w-[70px]"
-                            >
-                                <span className="bg-transparent text-[9px] font-black uppercase text-white outline-none cursor-pointer">
-                                    {aspectRatio}
-                                </span>
-                                <LayoutGrid className="w-2.5 h-2.5 text-muted-foreground" />
-                            </button>
-
-                            {isRatioDropdownOpen && (
-                                <div className="absolute top-full right-0 mt-2 w-32 bg-[#0c0c0e] border border-white/10 rounded-xl shadow-2xl p-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-300 backdrop-blur-xl">
-                                    {ASPECT_RATIOS.map(r => (
-                                        <button
-                                            key={r.label}
-                                            onClick={() => {
-                                                setAspectRatio(r.label);
-                                                setWidth(r.w.toString());
-                                                setHeight(r.h.toString());
-                                                setIsRatioDropdownOpen(false);
-                                            }}
-                                            className={cn(
-                                                "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all",
-                                                aspectRatio === r.label ? "bg-primary/20 text-primary" : "text-white/70 hover:bg-white/5 hover:text-white"
-                                            )}
-                                        >
-                                            <span className="text-[10px] font-bold uppercase">{r.label}</span>
-                                            {aspectRatio === r.label && <Check className="w-2.5 h-2.5" />}
-                                        </button>
-                                    ))}
-                                    <button
-                                        onClick={() => { setAspectRatio("custom"); setIsRatioDropdownOpen(false); }}
-                                        className={cn(
-                                            "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-all border-t border-white/5 mt-1",
-                                            aspectRatio === "custom" ? "bg-primary/20 text-primary" : "text-white/40 hover:bg-white/5 hover:text-white"
-                                        )}
-                                    >
-                                        <span className="text-[9px] font-bold uppercase italic">Custom</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="w-[1px] h-4 bg-white/10 mx-1" />
-                        <div className="flex items-center gap-1.5 px-2">
-                            <span className="text-[8px] font-black text-muted-foreground">W</span>
-                            <input type="number" value={width} onChange={(e) => { setWidth(e.target.value); setAspectRatio("custom"); }} className="w-8 bg-transparent text-[9px] font-black text-white outline-none text-center" />
-                        </div>
-                        <div className="flex items-center gap-1.5 px-2 font-black text-muted-foreground text-[8px]">x</div>
-                        <div className="flex items-center gap-1.5 px-2">
-                            <span className="text-[8px] font-black text-muted-foreground">H</span>
-                            <input type="number" value={height} onChange={(e) => { setHeight(e.target.value); setAspectRatio("custom"); }} className="w-8 bg-transparent text-[9px] font-black text-white outline-none text-center" />
-                        </div>
+                        {/* Seletor de Aspect Ratio removido daqui e levado para o prompt bar */}
                     </div>
 
                     {isAdminMode && (
@@ -1144,6 +1200,174 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
 
                         <div className="flex flex-col gap-1.5">
                             <div className="relative flex items-center">
+                                <div className="absolute left-2 top-1/2 -translate-y-1/2 z-30 flex items-center gap-1">
+                                    {/* Seletor de Modelo */}
+                                    <div className="relative" ref={modelSelectorRef}>
+                                        <button
+                                            onClick={() => setIsModelSelectorOpen(!isModelSelectorOpen)}
+                                            className={cn(
+                                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-105 shadow-xl shrink-0 border",
+                                                isModelSelectorOpen
+                                                    ? "bg-primary text-white border-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]"
+                                                    : "bg-white/5 text-muted-foreground border-white/10 hover:border-primary/50"
+                                            )}
+                                            title="Escolher Modelo"
+                                        >
+                                            <LayoutGrid className="w-4 h-4" />
+                                        </button>
+
+                                        <AnimatePresence>
+                                            {isModelSelectorOpen && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    className="absolute bottom-full left-0 mb-3 w-64 z-[100]"
+                                                >
+                                                    <div className="bg-[#0b0b0d] border border-white/10 rounded-[1.5rem] shadow-2xl p-2 backdrop-blur-xl">
+                                                        <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest px-4 py-3 border-b border-white/5 mb-1">
+                                                            Categorias de Modelo
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            {dynamicCategories.map((cat, index) => {
+                                                                const Icon = AVAILABLE_ICONS.find(i => i.name === cat.icon)?.icon || Sparkles;
+                                                                const catWorkflows = workflows.filter(w => w.categoryId === cat.id || w.type === cat.id);
+
+                                                                // Lógica de alinhamento inteligente:
+                                                                // - Primeiro item: Alinha no topo
+                                                                // - Último item: Alinha na base
+                                                                // - Meio: Centraliza verticalmente
+                                                                const isFirst = index === 0;
+                                                                const isLast = index === dynamicCategories.length - 1;
+
+                                                                return (
+                                                                    <div key={cat.id} className="relative group/cat-item">
+                                                                        <div className={cn(
+                                                                            "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer",
+                                                                            activeTab === cat.id ? "bg-white/5 text-primary" : "text-white/70 hover:bg-white/5 hover:text-white"
+                                                                        )}>
+                                                                            <div className="flex items-center gap-3">
+                                                                                <Icon className="w-3.5 h-3.5" />
+                                                                                <span className="text-[10px] font-black uppercase tracking-tight">{cat.name}</span>
+                                                                            </div>
+                                                                            <ChevronLeft className="w-3 h-3 group-hover/cat-item:translate-x-1 transition-transform opacity-40 rotate-180" />
+                                                                        </div>
+
+                                                                        {/* Sub-dropdown com os Modelos (Inteligente) */}
+                                                                        <div className={cn(
+                                                                            "absolute left-full ml-2 w-56 opacity-0 invisible group-hover/cat-item:opacity-100 group-hover/cat-item:visible transition-all duration-200 z-[110]",
+                                                                            isFirst ? "top-0" : (isLast ? "bottom-0" : "top-1/2 -translate-y-1/2")
+                                                                        )}>
+                                                                            <div className="bg-[#0b0b0d] border border-white/10 rounded-xl shadow-2xl p-2 backdrop-blur-xl">
+                                                                                <div className="text-[7px] font-black text-muted-foreground uppercase tracking-widest px-3 py-2 border-b border-white/5 mb-1 text-center">
+                                                                                    {cat.name}
+                                                                                </div>
+                                                                                <div className="max-h-64 overflow-y-auto no-scrollbar">
+                                                                                    {catWorkflows.length === 0 ? (
+                                                                                        <div className="px-3 py-4 text-[9px] text-muted-foreground italic text-center">Em breve...</div>
+                                                                                    ) : (
+                                                                                        catWorkflows.map(w => (
+                                                                                            <button
+                                                                                                key={w.id}
+                                                                                                onClick={() => {
+                                                                                                    setSelectedWorkflowId(w.id);
+                                                                                                    setActiveTab(cat.id);
+                                                                                                    setIsModelSelectorOpen(false);
+                                                                                                }}
+                                                                                                className={cn(
+                                                                                                    "w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-all",
+                                                                                                    selectedWorkflowId === w.id ? "bg-primary/20 text-primary border border-primary/20" : "text-white/70 hover:bg-white/10 hover:text-white"
+                                                                                                )}
+                                                                                            >
+                                                                                                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", selectedWorkflowId === w.id ? "bg-primary animate-pulse" : "bg-white/10")} />
+                                                                                                <span className="text-[10px] font-bold uppercase tracking-tight truncate">{w.name}</span>
+                                                                                            </button>
+                                                                                        ))
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+
+                                    {/* Seletor de Aspect Ratio */}
+                                    <div className="relative" ref={ratioSelectorRef}>
+                                        <button
+                                            onClick={() => setIsRatioDropdownOpen(!isRatioDropdownOpen)}
+                                            className={cn(
+                                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-105 shadow-xl shrink-0 border",
+                                                isRatioDropdownOpen
+                                                    ? "bg-primary text-white border-primary shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]"
+                                                    : "bg-white/5 text-muted-foreground border-white/10 hover:border-primary/50"
+                                            )}
+                                            title="Escolher Proporção"
+                                        >
+                                            <span className="text-[9px] font-black uppercase tracking-tight">{aspectRatio}</span>
+                                        </button>
+
+                                        <AnimatePresence>
+                                            {isRatioDropdownOpen && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    className="absolute bottom-full left-0 mb-3 w-48 z-[100]"
+                                                >
+                                                    <div className="bg-[#0b0b0d] border border-white/10 rounded-2xl shadow-2xl p-2 backdrop-blur-xl">
+                                                        <div className="text-[8px] font-black text-muted-foreground uppercase tracking-widest px-4 py-3 border-b border-white/5 mb-1">
+                                                            Proporção (Aspect Ratio)
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            {ASPECT_RATIOS.map(r => (
+                                                                <button
+                                                                    key={r.label}
+                                                                    onClick={() => {
+                                                                        setAspectRatio(r.label);
+                                                                        setWidth(r.w.toString());
+                                                                        setHeight(r.h.toString());
+                                                                        setIsRatioDropdownOpen(false);
+                                                                    }}
+                                                                    className={cn(
+                                                                        "w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all",
+                                                                        aspectRatio === r.label ? "bg-primary/20 text-primary border border-primary/20" : "text-white/70 hover:bg-white/5 hover:text-white"
+                                                                    )}
+                                                                >
+                                                                    <div className="flex flex-col items-start">
+                                                                        <span className="text-[10px] font-black uppercase tracking-tight">{r.label}</span>
+                                                                        <span className="text-[7px] opacity-50 font-bold">{r.w} x {r.h}</span>
+                                                                    </div>
+                                                                    {aspectRatio === r.label && <Check className="w-3 h-3" />}
+                                                                </button>
+                                                            ))}
+
+                                                            <div className="border-t border-white/5 mt-1 pt-1">
+                                                                <div className="px-4 py-2 text-[7px] font-black uppercase text-muted-foreground tracking-widest">Personalizado</div>
+                                                                <div className="flex items-center gap-2 px-2 pb-2">
+                                                                    <div className="flex-1 flex flex-col gap-1">
+                                                                        <span className="text-[6px] font-bold text-muted-foreground uppercase ml-1">Largura</span>
+                                                                        <input type="number" value={width} onChange={(e) => { setWidth(e.target.value); setAspectRatio("custom"); }} className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white outline-none focus:border-primary/50 transition-colors" />
+                                                                    </div>
+                                                                    <div className="flex-1 flex flex-col gap-1">
+                                                                        <span className="text-[6px] font-bold text-muted-foreground uppercase ml-1">Altura</span>
+                                                                        <input type="number" value={height} onChange={(e) => { setHeight(e.target.value); setAspectRatio("custom"); }} className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-[10px] font-bold text-white outline-none focus:border-primary/50 transition-colors" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </div>
+
                                 <textarea
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
@@ -1154,7 +1378,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                                         }
                                     }}
                                     rows={1}
-                                    className="w-full bg-[#0c0c0e] border border-white/10 hover:border-white/20 rounded-xl pl-4 pr-32 py-3.5 text-xs text-white focus:ring-1 focus:ring-primary outline-none resize-none no-scrollbar shadow-xl transition-colors disabled:opacity-50"
+                                    className="w-full bg-[#0c0c0e] border border-white/10 hover:border-white/20 rounded-xl pl-24 pr-32 py-3.5 text-xs text-white focus:ring-1 focus:ring-primary outline-none resize-none no-scrollbar shadow-xl transition-colors disabled:opacity-50"
                                     placeholder={workflows.find(w => w.id === selectedWorkflowId)?.mapping?.promptPlaceholder || "Descreva a foto..."}
                                 />
 
@@ -1223,31 +1447,35 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
 
             {viewerUrl && <ImageViewerModal url={viewerUrl} onClose={() => setViewerUrl(null)} onDownload={() => downloadFileToClient(viewerUrl)} />}
 
-            {pickingGalleryForNode && effectiveInfluencerId && (
-                <GalleryPickerModal
-                    influencerId={effectiveInfluencerId}
-                    onClose={() => setPickingGalleryForNode(null)}
-                    onSelect={(url) => {
-                        setImageInputs(prev => ({ ...prev, [pickingGalleryForNode]: { file: null, url } }));
-                        setPickingGalleryForNode(null);
-                    }}
-                />
-            )}  {/* Modal de Confirmação Customizado */}
-            {confirmDialog.isOpen && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
-                    <div className="bg-[#0b0b0d] w-full max-w-sm rounded-[2rem] p-8 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
-                        <div className="text-center mb-6">
-                            <Trash2 className="w-12 h-12 text-red-500/50 mx-auto mb-4" />
-                            <h3 className="text-white font-black uppercase text-sm tracking-widest mb-2">Confirmar Exclusão</h3>
-                            <p className="text-muted-foreground text-xs leading-relaxed">{confirmDialog.message}</p>
-                        </div>
-                        <div className="flex gap-3">
-                            <button onClick={() => setConfirmDialog(p => ({ ...p, isOpen: false }))} className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest transition-all">Cancelar</button>
-                            <button onClick={confirmDialog.onConfirm} className="flex-1 py-3 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all">Excluir</button>
+            {
+                pickingGalleryForNode && effectiveInfluencerId && (
+                    <GalleryPickerModal
+                        influencerId={effectiveInfluencerId}
+                        onClose={() => setPickingGalleryForNode(null)}
+                        onSelect={(url) => {
+                            setImageInputs(prev => ({ ...prev, [pickingGalleryForNode]: { file: null, url } }));
+                            setPickingGalleryForNode(null);
+                        }}
+                    />
+                )
+            } {/* Modal de Confirmação Customizado */}
+            {
+                confirmDialog.isOpen && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+                        <div className="bg-[#0b0b0d] w-full max-w-sm rounded-[2rem] p-8 border border-white/10 shadow-2xl animate-in fade-in zoom-in duration-200">
+                            <div className="text-center mb-6">
+                                <Trash2 className="w-12 h-12 text-red-500/50 mx-auto mb-4" />
+                                <h3 className="text-white font-black uppercase text-sm tracking-widest mb-2">Confirmar Exclusão</h3>
+                                <p className="text-muted-foreground text-xs leading-relaxed">{confirmDialog.message}</p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setConfirmDialog(p => ({ ...p, isOpen: false }))} className="flex-1 py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-widest transition-all">Cancelar</button>
+                                <button onClick={confirmDialog.onConfirm} className="flex-1 py-3 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white text-[10px] font-black uppercase tracking-widest transition-all">Excluir</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }

@@ -17,12 +17,40 @@ import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminModels } from "@/components/AdminModels";
 import { Menu, Crown } from "lucide-react";
 
+import { AgentChat } from "@/components/AgentChat";
+import { NordyCookieManager } from "@/components/NordyCookieManager";
+import { useParams } from "next/navigation";
+
 function AppContent() {
   const { user, profile, loading } = useAuth();
   const { influencers, loading: loadingInfluencers } = useInfluencers(profile?.agencyId);
-  const [selectedId, setSelectedId] = useState<string | null | undefined>(undefined);
-  const [activeModule, setActiveModule] = useState<ModuleType>("dashboard");
+  const params = useParams();
+
+  const [activeModule, setActiveModule] = useState<ModuleType>(
+    (params?.slug?.[0] as ModuleType) || "dashboard"
+  );
+  const [selectedId, setSelectedId] = useState<string | null | undefined>(
+    params?.slug?.[1] || undefined
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Sync state to URL seamlessly sem recarregar
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let nextPath = "/";
+    if (activeModule !== "dashboard") {
+      nextPath = `/${activeModule}`;
+      // Anexar o ID na URL apenas para rotas focadas num influenciador
+      if (selectedId && !activeModule.startsWith("admin_") && activeModule !== "agent_chat") {
+        nextPath += `/${selectedId}`;
+      }
+    }
+
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState(null, "", nextPath);
+    }
+  }, [activeModule, selectedId]);
 
   const isAdmin = profile?.role === "admin";
 
@@ -56,11 +84,13 @@ function AppContent() {
 
     switch (currentModule) {
       case "dashboard":
-        return <AgencyOverview agencyId={profile?.agencyId} onModuleChange={(m) => setActiveModule(m)} />;
+        return <AgencyOverview onModuleChange={(m) => setActiveModule(m as any)} />;
       case "admin_dashboard":
         return <AdminDashboard />;
       case "admin_models":
         return <AdminModels onModuleChange={(m) => setActiveModule(m as any)} />;
+      case "admin_cookies":
+        return <NordyCookieManager />;
       case "admin_studio":
         return <AIGeneratorStudio influencerId={null} isAdminMode={true} />;
       case "admin_gallery":
@@ -91,6 +121,12 @@ function AppContent() {
       case "crm":
         return (
           <CRM influencerId={selectedId || null} />
+        );
+      case "agent_chat":
+        return (
+          <div className="flex-1 w-full h-full relative">
+            <AgentChat />
+          </div>
         );
       default:
         return (

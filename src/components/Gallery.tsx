@@ -204,9 +204,25 @@ export function Gallery({ influencerId }: { influencerId: string | null }) {
                                         onClick={() => setViewerUrl(item.url)}
                                     >
                                         {item.url?.toLowerCase().includes('.mp4') ? (
-                                            <video src={item.url} autoPlay loop muted playsInline className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
+                                            <video
+                                                src={item.url}
+                                                autoPlay loop muted playsInline
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]"
+                                                onError={async () => {
+                                                    console.warn("Removendo vídeo quebrado:", item.id);
+                                                    await deleteMoodboardItem(influencerId, item.id).catch(() => { });
+                                                }}
+                                            />
                                         ) : (
-                                            <img src={item.url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]" />
+                                            <img
+                                                src={item.url}
+                                                alt=""
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[1.5s]"
+                                                onError={async () => {
+                                                    console.warn("Removendo imagem quebrada:", item.id);
+                                                    await deleteMoodboardItem(influencerId, item.id).catch(() => { });
+                                                }}
+                                            />
                                         )}
 
                                         {/* Action Overlays */}

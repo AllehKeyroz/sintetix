@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
+import { getNordyCookiesServer } from "@/lib/nordy_server";
 
 export async function POST(req: Request) {
-    // Configuraçao para evitar problemas de CORS da Vercel/App Hosting
     const origin = req.headers.get("origin") || "*";
     const corsHeaders = {
         "Access-Control-Allow-Origin": origin,
@@ -20,22 +20,24 @@ export async function POST(req: Request) {
         const { searchParams } = new URL(req.url);
         const targetId = searchParams.get("targetId") || "admin";
 
-        let cookie = process.env.NORDY_COOKIE;
-        if (targetId && targetId !== "admin") {
-            cookie = process.env[`NORDY_COOKIE_${targetId}`] || process.env.NORDY_COOKIE;
+        // 1. Tentar pegar do Firestore (Mais atualizado)
+        let cookie = await getNordyCookiesServer(targetId);
+
+        // 2. Se não houver no Firestore, tentar do .env
+        if (!cookie) {
+            cookie = process.env.NORDY_COOKIE as string;
+            if (targetId && targetId !== "admin") {
+                cookie = process.env[`NORDY_COOKIE_${targetId}`] as string || process.env.NORDY_COOKIE as string;
+            }
         }
 
         if (!cookie) {
-            return NextResponse.json({ error: "NORDY_COOKIE não configurado" }, { status: 500, headers: corsHeaders });
+            return NextResponse.json({ error: "NORDY_COOKIE não encontrado no Firestore ou ambiente" }, { status: 401, headers: corsHeaders });
         }
 
         const nordyUploadUrl = "https://api.nordy.ai/general/input-asset/file/image";
 
-        // Preparar novo FormData para o Nordy baseado na captura do usuario
         const nordyForm = new FormData();
-
-        // Em ambientes de produção (App Hosting/Edge), o File type do NextJS pode quebrar no fetch. 
-        // Lendo como arrayBuffer e convertendo para Blob resolve a serialização multipart/form-data.
         const fileContent = await file.arrayBuffer();
         const blob = new Blob([fileContent], { type: file.type });
 
@@ -50,7 +52,6 @@ export async function POST(req: Request) {
                 Referer: "https://nordy.ai/",
                 "x-origin-url": "https://nordy.ai/comfyui",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-                // Deixe o fetch definir o boundary automaticamente no Content-Type
             },
             body: nordyForm,
         });
@@ -62,7 +63,6 @@ export async function POST(req: Request) {
             return NextResponse.json(data, { status: response.status, headers: corsHeaders });
         }
 
-        // Retornamos o objeto completo do asset para o front extrair o rawUrl
         return NextResponse.json(data.asset, { headers: corsHeaders });
     } catch (error: any) {
         console.error("Erro no proxy Nordy Upload:", error);
