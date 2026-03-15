@@ -53,10 +53,3 @@ body {
   scrollbar-width: none;
   /* Firefox */
 }
-
-/* React Flow Custom Overrides */
-.react-flow__edge.selected .react-flow__edge-path {
-  stroke: var(--primary) !important;
-  stroke-width: 4 !important;
-  filter: drop-shadow(0 0 8px var(--primary));
-}
