@@ -664,7 +664,7 @@ export function AIGeneratorStudio({ influencerId, isAdminMode = false }: AIStudi
                                                                         </div>
                                                                         
                                                                         <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] text-white font-bold tracking-widest uppercase border border-white/10">
-                                                                            {idx + 1} / {item.urls.length}
+                                                                            {idx + 1} / {item.urls?.length || 0}
                                                                         </div>
                                                                     </div>
                                                                 </div>

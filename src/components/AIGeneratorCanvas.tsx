@@ -50,7 +50,7 @@ const CanvasContext = createContext<{
 } | null>(null);
 
 // --- CUSTOM NODE: INPUT TEXT ---
-const TextNode = ({ id, data }: NodeProps<{ text?: string }>) => {
+const TextNode = ({ id, data }: NodeProps<Node<{ text?: string }>>) => {
     const { setNodes } = useReactFlow()
     const ctx = useContext(CanvasContext)
     const [text, setText] = useState(data.text as string || "")
@@ -116,13 +116,13 @@ const TextNode = ({ id, data }: NodeProps<{ text?: string }>) => {
 }
 
 // --- CUSTOM NODE: TOOL ---
-const ToolNode = ({ id, data }: NodeProps<{
+const ToolNode = ({ id, data }: NodeProps<Node<{
     category?: ModelCategory;
     workflows?: ComfyWorkflow[];
     selectedWorkflowId?: string;
     status?: string;
     resultUrl?: string;
-}>) => {
+}>>) => {
     const category = data.category as ModelCategory
     const workflows = (data.workflows as ComfyWorkflow[]) || []
     const { setNodes } = useReactFlow()
@@ -301,7 +301,7 @@ const ToolNode = ({ id, data }: NodeProps<{
 }
 
 // --- CUSTOM NODE: IMAGE PREVIEW ---
-const PreviewNode = ({ id, data }: NodeProps<{ imageUrl?: string }>) => {
+const PreviewNode = ({ id, data }: NodeProps<Node<{ imageUrl?: string }>>) => {
     const imageUrl = data.imageUrl as string
     const ctx = useContext(CanvasContext)
 
@@ -394,14 +394,14 @@ const InsertEdgeNode = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition
 }
 
 // --- CUSTOM NODE: ASSISTANT IA ---
-const AssistantNode = ({ id, data }: NodeProps<{
+const AssistantNode = ({ id, data }: NodeProps<Node<{
     agents?: any[];
     status?: string;
     response?: string;
     selectedAgentId?: string;
     selectedModelId?: string;
     promptText?: string;
-}>) => {
+}>>) => {
     const { setNodes } = useReactFlow()
     const ctx = useContext(CanvasContext)
     const agents = data.agents || []
@@ -759,7 +759,6 @@ export function AIGeneratorCanvas({ influencerId }: { influencerId: string | nul
         try {
             await saveWorkflowTemplate({
                 name: templateData.name,
-                description: templateData.description,
                 categoryId: templateData.categoryId,
                 type: templateData.categoryId, // Fallback
                 coverImageUrl: templateData.coverImageUrl,
@@ -770,7 +769,7 @@ export function AIGeneratorCanvas({ influencerId }: { influencerId: string | nul
                 // Mas o AdminModels espera um JSON decifrável. 
                 // Por enquanto salvamos como um Template do tipo "canvas"
                 rawJson: JSON.stringify({ nodes, edges }),
-                provider: "canvas"
+                providerType: "api"
             });
             alert("Workflow publicado como Modelo Global!");
             setIsGlobalModalOpen(false);
@@ -903,7 +902,7 @@ export function AIGeneratorCanvas({ influencerId }: { influencerId: string | nul
         else setPalette(p => p.isOpen ? { ...p, isOpen: false, targetEdge: undefined } : p)
     }, [])
 
-    const onPaneContextMenu = useCallback((event: React.MouseEvent) => {
+    const onPaneContextMenu = useCallback((event: React.MouseEvent | MouseEvent) => {
         event.preventDefault()
         setPalette({ isOpen: true, x: event.clientX, y: event.clientY, targetEdge: undefined })
     }, [])
