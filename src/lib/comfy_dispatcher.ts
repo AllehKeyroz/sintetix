@@ -3,6 +3,7 @@
 import { ComfyEngine, ComfyWorkflowJson } from "@/types/comfy";
 import { runComfyIcuWorkflow, getComfyIcuRunStatus } from "./comfy_icu_actions";
 import { runComfyCloudWorkflow, getComfyCloudRunStatus } from "./comfy_cloud_actions";
+import { runFalAiWorkflow, getFalAiRunStatus } from "./fal_ai_actions";
 
 export interface UnifiedRunResponse {
     id: string;
@@ -22,6 +23,13 @@ export async function dispatchComfyRun(
         return {
             id: resp.id,
             engine: "comfy_cloud",
+            status: "PENDING"
+        };
+    } else if (engine === "fal_ai") {
+        const resp = await runFalAiWorkflow(prompt);
+        return {
+            id: resp.id,
+            engine: "fal_ai",
             status: "PENDING"
         };
     } else {
@@ -55,6 +63,15 @@ export async function dispatchComfyStatus(
             id: runId,
             engine: "comfy_cloud",
             status: statusMap[resp.status] || "PENDING",
+            outputs: resp.outputs,
+            error: resp.error
+        };
+    } else if (engine === "fal_ai") {
+        const resp = await getFalAiRunStatus(runId);
+        return {
+            id: runId,
+            engine: "fal_ai",
+            status: resp.status,
             outputs: resp.outputs,
             error: resp.error
         };

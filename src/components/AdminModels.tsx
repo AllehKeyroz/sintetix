@@ -571,6 +571,7 @@ export function AdminModels({ onModuleChange }: AdminModelsProps) {
                                     >
                                         <option value="comfy_icu">Comfy.icu (Padrão)</option>
                                         <option value="comfy_cloud">Comfy Cloud (Official/Org)</option>
+                                        <option value="fal_ai">Fal.ai (High Speed)</option>
                                     </select>
                                 </div>
                                 <div className="space-y-1.5 flex-1 w-full">

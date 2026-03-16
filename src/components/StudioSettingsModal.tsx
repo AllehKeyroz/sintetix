@@ -294,6 +294,7 @@ export function StudioSettingsModal({ isOpen, onClose, workflows, setWorkflows, 
                                     >
                                         <option value="comfy_icu">Comfy.icu (Padrão)</option>
                                         <option value="comfy_cloud">Comfy Cloud (Official/Org)</option>
+                                        <option value="fal_ai">Fal.ai (High Speed)</option>
                                     </select>
                                 </div>
                                 <div className="flex-1 space-y-1.5">

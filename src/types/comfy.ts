@@ -37,7 +37,7 @@ export interface ComfyMapping {
 }
 
 export type WorkflowType = "generate" | "outfit" | "pose" | "scenario";
-export type ComfyEngine = "comfy_icu" | "comfy_cloud";
+export type ComfyEngine = "comfy_icu" | "comfy_cloud" | "fal_ai";
 
 export interface ModelCategory {
     id: string;
