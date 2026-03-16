@@ -50,7 +50,7 @@ const CanvasContext = createContext<{
 } | null>(null);
 
 // --- CUSTOM NODE: INPUT TEXT ---
-const TextNode = ({ id, data }: NodeProps) => {
+const TextNode = ({ id, data }: NodeProps<{ text?: string }>) => {
     const { setNodes } = useReactFlow()
     const ctx = useContext(CanvasContext)
     const [text, setText] = useState(data.text as string || "")
@@ -116,13 +116,19 @@ const TextNode = ({ id, data }: NodeProps) => {
 }
 
 // --- CUSTOM NODE: TOOL ---
-const ToolNode = ({ id, data }: NodeProps) => {
+const ToolNode = ({ id, data }: NodeProps<{
+    category?: ModelCategory;
+    workflows?: ComfyWorkflow[];
+    selectedWorkflowId?: string;
+    status?: string;
+    resultUrl?: string;
+}>) => {
     const category = data.category as ModelCategory
     const workflows = (data.workflows as ComfyWorkflow[]) || []
     const { setNodes } = useReactFlow()
     const ctx = useContext(CanvasContext)
 
-    const [selectedWfId, setSelectedWfId] = useState<string>(data.selectedWorkflowId || (workflows.length > 0 ? workflows[0].id : ""))
+    const [selectedWfId, setSelectedWfId] = useState<string>((data.selectedWorkflowId as string) || (workflows.length > 0 ? (workflows[0].id as string) : ""))
     const currentWf = workflows.find(w => w.id === selectedWfId)
 
     // Status de Execução
@@ -295,7 +301,7 @@ const ToolNode = ({ id, data }: NodeProps) => {
 }
 
 // --- CUSTOM NODE: IMAGE PREVIEW ---
-const PreviewNode = ({ id, data }: NodeProps) => {
+const PreviewNode = ({ id, data }: NodeProps<{ imageUrl?: string }>) => {
     const imageUrl = data.imageUrl as string
     const ctx = useContext(CanvasContext)
 
@@ -388,7 +394,14 @@ const InsertEdgeNode = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition
 }
 
 // --- CUSTOM NODE: ASSISTANT IA ---
-const AssistantNode = ({ id, data }: NodeProps) => {
+const AssistantNode = ({ id, data }: NodeProps<{
+    agents?: any[];
+    status?: string;
+    response?: string;
+    selectedAgentId?: string;
+    selectedModelId?: string;
+    promptText?: string;
+}>) => {
     const { setNodes } = useReactFlow()
     const ctx = useContext(CanvasContext)
     const agents = data.agents || []
